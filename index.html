@@ -1,0 +1,2118 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Condiciones Básicas - Clasificación Final</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+        
+        * {
+            font-family: 'Inter', sans-serif;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            min-height: 100vh;
+        }
+        
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .industrial-gradient {
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+        }
+        
+        .card-hover {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        .card-hover:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+        }
+        
+        .btn-press {
+            transition: transform 0.1s;
+        }
+        
+        .btn-press:active {
+            transform: scale(0.98);
+        }
+        
+        .slide-in {
+            animation: slideIn 0.3s ease-out;
+        }
+        
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .fade-in {
+            animation: fadeIn 0.3s ease-out;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        
+        .progress-bar {
+            transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        .checkbox-custom {
+            transition: all 0.2s;
+        }
+        
+        .checkbox-custom:checked {
+            transform: scale(1.1);
+        }
+        
+        .image-preview {
+            transition: transform 0.2s;
+        }
+        
+        .image-preview:hover {
+            transform: scale(1.05);
+        }
+        
+        .status-badge {
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.8; }
+        }
+        
+        .calendar-day {
+            transition: all 0.2s;
+        }
+        
+        .calendar-day:hover:not(.empty) {
+            transform: scale(1.1);
+            z-index: 10;
+        }
+        
+        .tooltip {
+            visibility: hidden;
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+        
+        .has-tooltip:hover .tooltip {
+            visibility: visible;
+            opacity: 1;
+        }
+        
+        .loading-spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #3498db;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .modal-enter {
+            animation: modalEnter 0.3s ease-out;
+        }
+        
+        @keyframes modalEnter {
+            from { opacity: 0; transform: scale(0.9); }
+            to { opacity: 1; transform: scale(1); }
+        }
+        
+        .sidebar-item {
+            transition: all 0.2s;
+        }
+        
+        .sidebar-item:hover {
+            background: rgba(255, 255, 255, 0.1);
+            padding-left: 1.5rem;
+        }
+        
+        .sidebar-item.active {
+            background: rgba(255, 255, 255, 0.2);
+            border-left: 4px solid #60a5fa;
+        }
+        
+        .floating-action {
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3);
+            transition: all 0.3s;
+        }
+        
+        .floating-action:hover {
+            transform: translateY(-2px) scale(1.05);
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.4);
+        }
+        
+        .chart-container {
+            position: relative;
+            height: 300px;
+        }
+        
+        .equipment-tab {
+            transition: all 0.3s;
+        }
+        
+        .equipment-tab.active {
+            background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+            color: white;
+            box-shadow: 0 4px 6px -1px rgba(59, 130, 246, 0.3);
+        }
+        
+        .equipment-tab:not(.active):hover {
+            background-color: #f3f4f6;
+            transform: translateY(-1px);
+        }
+        
+        @media (max-width: 640px) {
+            .mobile-padding {
+                padding: 0.75rem;
+            }
+        }
+    </style>
+</head>
+<body class="text-gray-800 overflow-x-hidden">
+
+    <!-- Login Screen -->
+    <div id="loginScreen" class="fixed inset-0 z-50 flex items-center justify-center industrial-gradient">
+        <div class="glass-panel rounded-2xl p-8 w-full max-w-md mx-4 shadow-2xl modal-enter">
+            <div class="text-center mb-8">
+                <div class="w-20 h-20 bg-blue-600 rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg">
+                    <i class="fas fa-clipboard-check text-3xl text-white"></i>
+                </div>
+                <h1 class="text-2xl font-bold text-gray-800 mb-2">Condiciones Básicas</h1>
+                <p class="text-gray-600">Clasificación Final</p>
+            </div>
+            
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Selecciona tu rol</label>
+                    <select id="roleSelect" class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all">
+                        <option value="">-- Seleccionar rol --</option>
+                        <option value="instructor">Instructor</option>
+                        <option value="facilitador">Facilitador</option>
+                        <option value="admin">Administrador</option>
+                    </select>
+                </div>
+                
+                
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Email</label>
+                    <input id="emailInput" type="email" autocomplete="email" placeholder="tu@email.com"
+                           class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all" />
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Contraseña</label>
+                    <input id="passwordInput" type="password" autocomplete="current-password" placeholder="••••••••"
+                           class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all" />
+                    <p class="text-xs text-gray-500 mt-2">
+                        Si es tu primera vez, usa <b>Crear cuenta</b>.
+                    </p>
+                </div>
+
+<div id="instructorSelectDiv" class="hidden">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Selecciona tu nombre</label>
+                    <select id="instructorSelect" class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all">
+                        <option value="">-- Seleccionar instructor --</option>
+                        <option value="Juan David Cadavid">Juan David Cadavid</option>
+                        <option value="Andres Felipe Mendez">Andres Felipe Mendez</option>
+                        <option value="Fabian Alzate">Fabian Alzate</option>
+                    </select>
+                </div>
+                
+                
+                <button onclick="login()" class="w-full bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 transition-all btn-press shadow-lg mt-6">
+                    Ingresar
+                </button>
+
+                <button onclick="signUp()" class="w-full bg-white text-blue-700 py-3 rounded-lg font-semibold hover:bg-blue-50 transition-all btn-press shadow-lg border border-blue-200">
+                    Crear cuenta
+                </button>
+
+            </div>
+            
+            <div class="mt-6 text-center text-sm text-gray-500">
+                <i class="fas fa-shield-alt mr-1"></i> Sistema de Inspección Industrial
+            </div>
+        </div>
+    </div>
+
+    <!-- Main App -->
+    <div id="mainApp" class="hidden min-h-screen flex flex-col lg:flex-row">
+        
+        <!-- Sidebar -->
+        <aside class="industrial-gradient text-white w-full lg:w-64 flex-shrink-0 lg:min-h-screen shadow-xl">
+            <div class="p-6 border-b border-white/20">
+                <div class="flex items-center space-x-3">
+                    <div class="w-10 h-10 bg-white/20 rounded-lg flex items-center justify-center">
+                        <i class="fas fa-industry text-xl"></i>
+                    </div>
+                    <div>
+                        <h2 class="font-bold text-lg leading-tight">Condiciones Básicas</h2>
+                        <p class="text-xs text-blue-200">Clasificación Final</p>
+                    </div>
+                </div>
+            </div>
+            
+            <nav class="p-4 space-y-2" id="sidebarNav">
+                <!-- Dynamic menu items based on role -->
+            </nav>
+            
+            <div class="absolute bottom-0 left-0 right-0 p-4 border-t border-white/20 bg-black/20">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center space-x-2">
+                        <div class="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center">
+                            <i class="fas fa-user text-sm"></i>
+                        </div>
+                        <div class="text-sm">
+                            <p class="font-medium" id="userNameDisplay">Usuario</p>
+                            <p class="text-xs text-blue-200" id="userRoleDisplay">Rol</p>
+                        </div>
+                    </div>
+                    <button onclick="logout()" class="text-white/70 hover:text-white transition-colors">
+                        <i class="fas fa-sign-out-alt"></i>
+                    </button>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="flex-1 overflow-auto">
+            <!-- Header -->
+            <header class="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-30">
+                <div class="px-4 py-4 lg:px-8 flex items-center justify-between">
+                    <h1 id="pageTitle" class="text-xl lg:text-2xl font-bold text-gray-800">Dashboard</h1>
+                    <div class="flex items-center space-x-4">
+                        <span id="currentDate" class="text-sm text-gray-500 hidden sm:block"></span>
+                        <button class="lg:hidden text-gray-600" onclick="toggleSidebar()">
+                            <i class="fas fa-bars text-xl"></i>
+                        </button>
+                    </div>
+                </div>
+            </header>
+
+            <!-- Content Area -->
+            <div id="contentArea" class="p-4 lg:p-8">
+                <!-- Dynamic content loaded here -->
+            </div>
+        </main>
+    </div>
+
+    <!-- Modal for Image Preview -->
+    <div id="imageModal" class="fixed inset-0 z-50 hidden bg-black/90 flex items-center justify-center p-4" onclick="closeImageModal()">
+        <div class="relative max-w-4xl w-full">
+            <button class="absolute -top-10 right-0 text-white text-2xl hover:text-gray-300" onclick="closeImageModal()">
+                <i class="fas fa-times"></i>
+            </button>
+            <img id="modalImage" src="" alt="Preview" class="w-full h-auto rounded-lg shadow-2xl">
+        </div>
+    </div>
+
+    <!-- Toast Notification -->
+    <div id="toast" class="fixed bottom-4 right-4 bg-gray-800 text-white px-6 py-3 rounded-lg shadow-lg transform translate-y-20 transition-transform duration-300 z-50 flex items-center space-x-2">
+        <i id="toastIcon" class="fas fa-check-circle text-green-400"></i>
+        <span id="toastMessage">Operación exitosa</span>
+    </div>
+
+    <script>
+        // Data Store con checklists independientes por equipo
+        const defaultChecklists = {
+            'Tazamania': [
+                { id: 1, text: "Limpieza general del área de trabajo", category: "5S" },
+                { id: 2, text: "Orden y organización de herramientas", category: "5S" },
+                { id: 3, text: "Estado de señalización de seguridad", category: "Seguridad" },
+                { id: 4, text: "Funcionamiento de extintores", category: "Seguridad" }
+            ],
+            'Kaisen': [
+                { id: 1, text: "Estado de iluminación", category: "Infraestructura" },
+                { id: 2, text: "Limpieza de derrames o fugas", category: "Ambiental" },
+                { id: 3, text: "Uso correcto de EPP", category: "Seguridad" },
+                { id: 4, text: "Estado de maquinaria y equipos", category: "Mantenimiento" }
+            ],
+            'Innova 360': [
+                { id: 1, text: "Organización del área de trabajo", category: "5S" },
+                { id: 2, text: "Estado de herramientas manuales", category: "Mantenimiento" },
+                { id: 3, text: "Señalización de emergencia", category: "Seguridad" },
+                { id: 4, text: "Control de residuos", category: "Ambiental" }
+            ],
+            'Recuperadores': [
+                { id: 1, text: "Estado de equipos de recuperación", category: "Operación" },
+                { id: 2, text: "Limpieza de área de trabajo", category: "5S" },
+                { id: 3, text: "Control de inventario", category: "Logística" }
+            ],
+            'Sinergía': [
+                { id: 1, text: "Coordinación entre áreas", category: "Procesos" },
+                { id: 2, text: "Comunicación efectiva", category: "Gestión" },
+                { id: 3, text: "Estado de equipos compartidos", category: "Mantenimiento" }
+            ]
+        };
+
+        const store = {
+            currentUser: null,
+            currentRole: null,
+            inspections: JSON.parse(localStorage.getItem('inspections') || '[]'),
+            checklistsByEquipment: JSON.parse(localStorage.getItem('checklistsByEquipment') || JSON.stringify(defaultChecklists)),
+            equipments: ['Tazamania', 'Kaisen', 'Innova 360', 'Recuperadores', 'Sinergía'],
+            instructors: ['Juan David Cadavid', 'Andres Felipe Mendez', 'Fabian Alzate'],
+            draftInspection: null,
+            currentEquipmentChecklist: null,
+            calendarFilter: '' // Nuevo: filtro actual del calendario
+        };
+
+        // =========================
+        // Supabase (Auth + Sync)
+        // =========================
+        // IMPORTANTE: En GitHub Pages no se pueden ocultar estas variables.
+        // Usa SIEMPRE RLS (políticas) en Supabase para proteger la data.
+        const SUPABASE_URL = 'https://ukhzzznwoezsuyzrytjr.supabase.co';
+        const SUPABASE_ANON_KEY = 'sb_publishable_At6yI_QJeXKNEvg-jQJobQ_7OJDN8iQ';
+
+        const supabaseClient = (SUPABASE_URL.startsWith('http') && SUPABASE_ANON_KEY.startsWith('ey'))
+            ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
+            : null;
+
+        let currentAuthUserId = null;
+        let saveDebounceTimer = null;
+
+        async function loadStateFromSupabase() {
+            if (!supabaseClient || !currentAuthUserId) return;
+
+            const { data, error } = await supabaseClient
+                .from('app_state')
+                .select('state')
+                .eq('user_id', currentAuthUserId)
+                .maybeSingle();
+
+            if (error) {
+                console.warn('Supabase load error:', error);
+                return;
+            }
+
+            if (!data?.state) return;
+
+            const loaded = data.state;
+            store.inspections = Array.isArray(loaded.inspections) ? loaded.inspections : store.inspections;
+            store.checklistsByEquipment = loaded.checklistsByEquipment || store.checklistsByEquipment;
+            store.equipments = Array.isArray(loaded.equipments) ? loaded.equipments : store.equipments;
+            store.instructors = Array.isArray(loaded.instructors) ? loaded.instructors : store.instructors;
+        }
+
+        function queueSaveState() {
+            if (!supabaseClient || !currentAuthUserId) return;
+            if (saveDebounceTimer) clearTimeout(saveDebounceTimer);
+            saveDebounceTimer = setTimeout(() => { void saveStateToSupabase(); }, 800);
+        }
+
+        async function saveStateToSupabase() {
+            if (!supabaseClient || !currentAuthUserId) return;
+
+            const payload = {
+                user_id: currentAuthUserId,
+                state: {
+                    inspections: store.inspections,
+                    checklistsByEquipment: store.checklistsByEquipment,
+                    equipments: store.equipments,
+                    instructors: store.instructors
+                },
+                updated_at: new Date().toISOString()
+            };
+
+            const { error } = await supabaseClient
+                .from('app_state')
+                .upsert(payload, { onConflict: 'user_id' });
+
+            if (error) {
+                console.warn('Supabase save error:', error);
+            }
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            updateDate();
+            setInterval(updateDate, 60000);
+            
+            document.getElementById('roleSelect').addEventListener('change', (e) => {
+                const instructorDiv = document.getElementById('instructorSelectDiv');
+                if (e.target.value === 'instructor') {
+                    instructorDiv.classList.remove('hidden');
+                } else {
+                    instructorDiv.classList.add('hidden');
+                }
+            });
+        });
+
+        function updateDate() {
+            const now = new Date();
+            const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' };
+            document.getElementById('currentDate').textContent = now.toLocaleDateString('es-ES', options);
+        }
+
+        function getLoginInputs() {
+            const role = document.getElementById('roleSelect').value;
+            const instructor = document.getElementById('instructorSelect').value;
+            const email = (document.getElementById('emailInput')?.value || '').trim();
+            const password = document.getElementById('passwordInput')?.value || '';
+            return { role, instructor, email, password };
+        }
+
+        async function signUp() {
+            const { role, instructor, email, password } = getLoginInputs();
+
+            if (!supabaseClient) {
+                showToast('Falta configurar Supabase (URL y ANON KEY) en el código', 'error');
+                return;
+            }
+
+            if (!email || !password) {
+                showToast('Escribe email y contraseña', 'error');
+                return;
+            }
+
+            const { data, error } = await supabaseClient.auth.signUp({ email, password });
+            if (error) {
+                showToast(error.message, 'error');
+                return;
+            }
+
+            // Si Supabase pide confirmar email, igual dejamos el mensaje claro.
+            if (!data.session) {
+                showToast('Cuenta creada. Revisa tu email para confirmar y luego ingresa.', 'success');
+                return;
+            }
+
+            showToast('Cuenta creada. Iniciando sesión...', 'success');
+            await login();
+        }
+
+        async function login() {
+            const { role, instructor, email, password } = getLoginInputs();
+
+            if (!role) {
+                showToast('Selecciona un rol', 'error');
+                return;
+            }
+
+            if (role === 'instructor' && !instructor) {
+                showToast('Selecciona tu nombre', 'error');
+                return;
+            }
+
+            if (!email || !password) {
+                showToast('Escribe email y contraseña', 'error');
+                return;
+            }
+
+            // Si Supabase no está configurado, la app queda en modo local (solo este navegador)
+            if (!supabaseClient) {
+                store.currentRole = role;
+                store.currentUser = role === 'instructor' ? instructor : (role === 'facilitador' ? 'Facilitador' : 'Administrador');
+                document.getElementById('loginScreen').classList.add('hidden');
+                document.getElementById('mainApp').classList.remove('hidden');
+                document.getElementById('userNameDisplay').textContent = store.currentUser;
+                document.getElementById('userRoleDisplay').textContent = role.charAt(0).toUpperCase() + role.slice(1);
+                setupSidebar();
+                navigateTo('dashboard');
+                showToast('Modo local (sin Supabase)', 'success');
+                return;
+            }
+
+            const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
+            if (error) {
+                showToast('Login inválido: ' + error.message, 'error');
+                return;
+            }
+
+            const user = data.user;
+            currentAuthUserId = user.id;
+
+            // Perfil (rol/nombre) en Supabase
+            const displayName = role === 'instructor' ? instructor : email;
+            const profilePayload = { id: user.id, role, display_name: displayName, email: user.email };
+
+            const { error: profileError } = await supabaseClient
+                .from('profiles')
+                .upsert(profilePayload, { onConflict: 'id' });
+
+            if (profileError) {
+                console.warn('Profile upsert error:', profileError);
+            }
+
+            await loadStateFromSupabase();
+
+            store.currentRole = role;
+            store.currentUser = displayName;
+
+            // Sincroniza también localStorage (por si se queda sin internet)
+        
+            queueSaveState();
+        
+            queueSaveState();
+
+            document.getElementById('loginScreen').classList.add('hidden');
+            document.getElementById('mainApp').classList.remove('hidden');
+
+            document.getElementById('userNameDisplay').textContent = store.currentUser;
+            document.getElementById('userRoleDisplay').textContent = role.charAt(0).toUpperCase() + role.slice(1);
+
+            setupSidebar();
+            navigateTo('dashboard');
+
+            showToast('Sesión iniciada', 'success');
+        }
+
+
+        
+
+        async function logout() {
+            try {
+                if (supabaseClient) await supabaseClient.auth.signOut();
+            } catch (e) {
+                console.warn('Supabase signOut error:', e);
+            }
+
+            currentAuthUserId = null;
+
+            store.currentUser = null;
+            store.currentRole = null;
+            store.currentEquipmentChecklist = null;
+            store.calendarFilter = '';
+
+            document.getElementById('mainApp').classList.add('hidden');
+            document.getElementById('loginScreen').classList.remove('hidden');
+            document.getElementById('loginScreen').classList.add('fade-in');
+        }
+
+        function setupSidebar() {
+            const nav = document.getElementById('sidebarNav');
+            nav.innerHTML = '';
+            
+            const menus = {
+                instructor: [
+                    { id: 'newInspection', icon: 'fa-plus-circle', text: 'Nueva Inspección' },
+                    { id: 'myInspections', icon: 'fa-clipboard-list', text: 'Mis Inspecciones' }
+                ],
+                facilitador: [
+                    { id: 'dashboard', icon: 'fa-chart-line', text: 'Dashboard' },
+                    { id: 'inspections', icon: 'fa-clipboard-check', text: 'Inspecciones' },
+                    { id: 'calendar', icon: 'fa-calendar-alt', text: 'Calendario' },
+                    { id: 'reports', icon: 'fa-file-export', text: 'Reportes' }
+                ],
+                admin: [
+                    { id: 'dashboard', icon: 'fa-chart-line', text: 'Dashboard' },
+                    { id: 'inspections', icon: 'fa-clipboard-check', text: 'Inspecciones' },
+                    { id: 'users', icon: 'fa-users', text: 'Instructores' },
+                    { id: 'checklist', icon: 'fa-tasks', text: 'Checklist por Equipo' },
+                    { id: 'calendar', icon: 'fa-calendar-alt', text: 'Calendario' },
+                    { id: 'reports', icon: 'fa-file-export', text: 'Reportes' }
+                ]
+            };
+            
+            menus[store.currentRole].forEach(item => {
+                const btn = document.createElement('button');
+                btn.className = `sidebar-item w-full text-left px-4 py-3 rounded-lg flex items-center space-x-3 ${item.id === 'dashboard' ? 'active' : ''}`;
+                btn.onclick = () => navigateTo(item.id);
+                btn.innerHTML = `
+                    <i class="fas ${item.icon} w-5"></i>
+                    <span>${item.text}</span>
+                `;
+                nav.appendChild(btn);
+            });
+        }
+
+        function navigateTo(page) {
+            document.querySelectorAll('.sidebar-item').forEach(btn => {
+                btn.classList.remove('active');
+                if (btn.onclick.toString().includes(page)) {
+                    btn.classList.add('active');
+                }
+            });
+            
+            const content = document.getElementById('contentArea');
+            const title = document.getElementById('pageTitle');
+            
+            content.innerHTML = '<div class="loading-spinner mx-auto"></div>';
+            
+            setTimeout(() => {
+                switch(page) {
+                    case 'dashboard':
+                        title.textContent = 'Dashboard';
+                        renderDashboard(content);
+                        break;
+                    case 'newInspection':
+                        title.textContent = 'Nueva Inspección';
+                        renderNewInspection(content);
+                        break;
+                    case 'myInspections':
+                        title.textContent = 'Mis Inspecciones';
+                        renderMyInspections(content);
+                        break;
+                    case 'inspections':
+                        title.textContent = 'Todas las Inspecciones';
+                        renderAllInspections(content);
+                        break;
+                    case 'calendar':
+                        title.textContent = 'Calendario de Inspecciones';
+                        renderCalendar(content);
+                        break;
+                    case 'reports':
+                        title.textContent = 'Reportes y Exportación';
+                        renderReports(content);
+                        break;
+                    case 'users':
+                        title.textContent = 'Gestión de Instructores';
+                        renderUsers(content);
+                        break;
+                    case 'checklist':
+                        title.textContent = 'Gestión de Checklist por Equipo';
+                        renderChecklistAdmin(content);
+                        break;
+                }
+                content.classList.add('fade-in');
+            }, 300);
+        }
+
+        // Instructor Views
+        function renderNewInspection(container) {
+            if (store.draftInspection) {
+                renderInspectionForm(container, store.draftInspection);
+                return;
+            }
+            
+            container.innerHTML = `
+                <div class="max-w-2xl mx-auto slide-in">
+                    <div class="glass-panel rounded-2xl p-6 lg:p-8 shadow-xl">
+                        <h2 class="text-2xl font-bold mb-6 text-gray-800">Configurar Inspección</h2>
+                        
+                        <div class="space-y-6">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Instructor</label>
+                                <input type="text" value="${store.currentUser}" disabled 
+                                    class="w-full px-4 py-3 rounded-lg bg-gray-100 border border-gray-300 text-gray-600">
+                            </div>
+                            
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Fecha y Hora</label>
+                                <input type="text" id="inspectionDate" disabled 
+                                    class="w-full px-4 py-3 rounded-lg bg-gray-100 border border-gray-300 text-gray-600">
+                            </div>
+                            
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Seleccionar Equipo *</label>
+                                <select id="equipmentSelect" onchange="showEquipmentItemsCount()" class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all">
+                                    <option value="">-- Seleccionar equipo --</option>
+                                    ${store.equipments.map(e => `<option value="${e}">${e}</option>`).join('')}
+                                </select>
+                                <p id="itemsCount" class="mt-2 text-sm text-gray-600 hidden">
+                                    <i class="fas fa-info-circle text-blue-500 mr-1"></i>
+                                    Este equipo tiene <span class="font-semibold" id="itemsCountNumber">0</span> ítems en su checklist
+                                </p>
+                            </div>
+                            
+                            <button onclick="startInspection()" 
+                                class="w-full bg-blue-600 text-white py-4 rounded-xl font-semibold hover:bg-blue-700 transition-all btn-press shadow-lg text-lg">
+                                <i class="fas fa-play mr-2"></i> Comenzar Inspección
+                            </button>
+                            
+                            ${store.inspections.some(i => i.instructor === store.currentUser && i.status === 'draft') ? `
+                                <button onclick="loadLastDraft()" 
+                                    class="w-full bg-gray-200 text-gray-700 py-3 rounded-xl font-medium hover:bg-gray-300 transition-all btn-press mt-4">
+                                    <i class="fas fa-folder-open mr-2"></i> Cargar Borrador Guardado
+                                </button>
+                            ` : ''}
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            document.getElementById('inspectionDate').value = new Date().toLocaleString('es-ES');
+        }
+
+        function showEquipmentItemsCount() {
+            const equipment = document.getElementById('equipmentSelect').value;
+            const countDiv = document.getElementById('itemsCount');
+            const countSpan = document.getElementById('itemsCountNumber');
+            
+            if (equipment && store.checklistsByEquipment[equipment]) {
+                countSpan.textContent = store.checklistsByEquipment[equipment].length;
+                countDiv.classList.remove('hidden');
+            } else {
+                countDiv.classList.add('hidden');
+            }
+        }
+
+        function startInspection() {
+            const equipment = document.getElementById('equipmentSelect').value;
+            if (!equipment) {
+                showToast('Selecciona un equipo', 'error');
+                return;
+            }
+            
+            const equipmentChecklist = store.checklistsByEquipment[equipment] || [];
+            
+            if (equipmentChecklist.length === 0) {
+                showToast('Este equipo no tiene ítems configurados en el checklist', 'error');
+                return;
+            }
+            
+            const inspection = {
+                id: Date.now(),
+                instructor: store.currentUser,
+                equipment: equipment,
+                date: new Date().toISOString(),
+                status: 'draft',
+                items: equipmentChecklist.map(item => ({
+                    ...item,
+                    value: null,
+                    comment: '',
+                    image: null
+                })),
+                generalComments: ''
+            };
+            
+            store.draftInspection = inspection;
+            renderInspectionForm(document.getElementById('contentArea'), inspection);
+        }
+
+        function renderInspectionForm(container, inspection) {
+            const answeredCount = inspection.items.filter(i => i.value !== null).length;
+            const progress = (answeredCount / inspection.items.length) * 100;
+            
+            container.innerHTML = `
+                <div class="max-w-4xl mx-auto slide-in pb-24">
+                    <!-- Progress Header -->
+                    <div class="glass-panel rounded-2xl p-4 mb-6 shadow-lg sticky top-20 z-20">
+                        <div class="flex items-center justify-between mb-2">
+                            <div>
+                                <h3 class="font-bold text-lg">${inspection.equipment}</h3>
+                                <p class="text-sm text-gray-600">${new Date(inspection.date).toLocaleString('es-ES')}</p>
+                                <p class="text-xs text-blue-600 mt-1">${inspection.items.length} ítems en checklist</p>
+                            </div>
+                            <div class="text-right">
+                                <span class="text-2xl font-bold text-blue-600">${answeredCount}/${inspection.items.length}</span>
+                                <span class="text-sm text-gray-600 block">ítems respondidos</span>
+                            </div>
+                        </div>
+                        <div class="w-full bg-gray-200 rounded-full h-3 overflow-hidden">
+                            <div class="progress-bar bg-gradient-to-r from-blue-500 to-blue-600 h-full rounded-full" style="width: ${progress}%"></div>
+                        </div>
+                    </div>
+                    
+                    <!-- Checklist Items -->
+                    <div class="space-y-4" id="checklistContainer">
+                        ${inspection.items.map((item, index) => renderChecklistItem(item, index)).join('')}
+                    </div>
+                    
+                    <!-- General Comments -->
+                    <div class="glass-panel rounded-2xl p-6 mt-6 shadow-lg">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Comentarios Generales</label>
+                        <textarea id="generalComments" rows="4" 
+                            class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all resize-none"
+                            placeholder="Observaciones generales de la inspección...">${inspection.generalComments}</textarea>
+                    </div>
+                    
+                    <!-- Action Buttons -->
+                    <div class="fixed bottom-0 left-0 right-0 lg:left-64 bg-white border-t border-gray-200 p-4 shadow-lg z-30">
+                        <div class="max-w-4xl mx-auto flex flex-col sm:flex-row gap-3">
+                            <button onclick="saveDraft()" 
+                                class="flex-1 bg-gray-200 text-gray-700 py-3 rounded-xl font-semibold hover:bg-gray-300 transition-all btn-press">
+                                <i class="fas fa-save mr-2"></i> Guardar Borrador
+                            </button>
+                            <button onclick="finalizeInspection()" 
+                                class="flex-1 bg-green-600 text-white py-3 rounded-xl font-semibold hover:bg-green-700 transition-all btn-press shadow-lg">
+                                <i class="fas fa-check-circle mr-2"></i> Finalizar Inspección
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderChecklistItem(item, index) {
+            const hasImage = item.image ? `<img src="${item.image}" class="w-16 h-16 object-cover rounded-lg image-preview cursor-pointer" onclick="viewImage('${item.image}')">` : '';
+            const warningClass = item.value === 0 && !item.comment && !item.image ? 'border-red-300 bg-red-50' : 'border-gray-200';
+            
+            return `
+                <div class="glass-panel rounded-xl p-4 lg:p-6 shadow-md card-hover border-2 ${warningClass}" id="item-${index}">
+                    <div class="flex flex-col lg:flex-row lg:items-start gap-4">
+                        <div class="flex-1">
+                            <div class="flex items-start justify-between mb-3">
+                                <h4 class="font-semibold text-gray-800 text-lg">${index + 1}. ${item.text}</h4>
+                                <span class="text-xs px-2 py-1 bg-gray-100 rounded-full text-gray-600">${item.category}</span>
+                            </div>
+                            
+                            <div class="flex flex-wrap gap-2 mb-4">
+                                <button onclick="setItemValue(${index}, 1)" 
+                                    class="flex-1 sm:flex-none px-4 py-2 rounded-lg font-medium transition-all btn-press ${item.value === 1 ? 'bg-green-500 text-white shadow-md' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}">
+                                    <i class="fas fa-check mr-1"></i> Cumple (1)
+                                </button>
+                                <button onclick="setItemValue(${index}, 0)" 
+                                    class="flex-1 sm:flex-none px-4 py-2 rounded-lg font-medium transition-all btn-press ${item.value === 0 ? 'bg-red-500 text-white shadow-md' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}">
+                                    <i class="fas fa-times mr-1"></i> No Cumple (0)
+                                </button>
+                                <button onclick="setItemValue(${index}, -1)" 
+                                    class="flex-1 sm:flex-none px-4 py-2 rounded-lg font-medium transition-all btn-press ${item.value === -1 ? 'bg-gray-500 text-white shadow-md' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}">
+                                    N/A
+                                </button>
+                            </div>
+                            
+                            ${item.value === 0 ? `
+                                <div class="bg-red-50 border border-red-200 rounded-lg p-3 mb-3 text-sm text-red-700">
+                                    <i class="fas fa-exclamation-triangle mr-1"></i> Se recomienda adjuntar foto o comentario para ítems No Cumple
+                                </div>
+                            ` : ''}
+                            
+                            <div class="space-y-2">
+                                <input type="text" 
+                                    value="${item.comment}" 
+                                    onchange="updateItemComment(${index}, this.value)"
+                                    placeholder="Comentario opcional..." 
+                                    class="w-full px-3 py-2 rounded-lg border border-gray-300 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                                
+                                <div class="flex items-center gap-2">
+                                    <label class="flex items-center gap-2 px-3 py-2 bg-blue-50 text-blue-600 rounded-lg cursor-pointer hover:bg-blue-100 transition-colors text-sm font-medium">
+                                        <i class="fas fa-camera"></i>
+                                        <span>${item.image ? 'Cambiar foto' : 'Adjuntar evidencia'}</span>
+                                        <input type="file" accept="image/*" class="hidden" onchange="handleImageUpload(${index}, this)">
+                                    </label>
+                                    ${hasImage}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function setItemValue(index, value) {
+            store.draftInspection.items[index].value = value;
+            renderInspectionForm(document.getElementById('contentArea'), store.draftInspection);
+            showToast('Respuesta guardada', 'success');
+        }
+
+        function updateItemComment(index, comment) {
+            store.draftInspection.items[index].comment = comment;
+        }
+
+        function handleImageUpload(index, input) {
+            const file = input.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    store.draftInspection.items[index].image = e.target.result;
+                    renderInspectionForm(document.getElementById('contentArea'), store.draftInspection);
+                    showToast('Imagen adjuntada', 'success');
+                };
+                reader.readAsDataURL(file);
+            }
+        }
+
+        function viewImage(src) {
+            document.getElementById('modalImage').src = src;
+            document.getElementById('imageModal').classList.remove('hidden');
+        }
+
+        function closeImageModal() {
+            document.getElementById('imageModal').classList.add('hidden');
+        }
+
+        function saveDraft() {
+            store.draftInspection.generalComments = document.getElementById('generalComments').value;
+            store.draftInspection.lastSaved = new Date().toISOString();
+            
+            store.inspections = store.inspections.filter(i => i.id !== store.draftInspection.id);
+            store.inspections.push({...store.draftInspection});
+            
+            
+            queueSaveState();
+            showToast('Borrador guardado correctamente', 'success');
+        }
+
+        function finalizeInspection() {
+            const inspection = store.draftInspection;
+            const unanswered = inspection.items.filter(i => i.value === null);
+            
+            if (unanswered.length > 0) {
+                showToast(`Faltan ${unanswered.length} ítems por responder`, 'error');
+                document.getElementById(`item-${inspection.items.indexOf(unanswered[0])}`).scrollIntoView({ behavior: 'smooth', block: 'center' });
+                return;
+            }
+            
+            const noCumpleWithoutEvidence = inspection.items.filter(i => i.value === 0 && !i.comment && !i.image);
+            if (noCumpleWithoutEvidence.length > 0) {
+                if (!confirm('Hay ítems "No Cumple" sin foto ni comentario. ¿Deseas continuar de todos modos?')) {
+                    return;
+                }
+            }
+            
+            inspection.status = 'completed';
+            inspection.generalComments = document.getElementById('generalComments').value;
+            inspection.completedAt = new Date().toISOString();
+            
+            const applicable = inspection.items.filter(i => i.value !== -1);
+            const passed = applicable.filter(i => i.value === 1);
+            inspection.score = applicable.length > 0 ? (passed.length / applicable.length) * 100 : 0;
+            
+            store.inspections = store.inspections.filter(i => i.id !== inspection.id);
+            store.inspections.push(inspection);
+            
+            queueSaveState();
+            
+            store.draftInspection = null;
+            
+            showToast('¡Inspección finalizada exitosamente!', 'success');
+            setTimeout(() => navigateTo('myInspections'), 1000);
+        }
+
+        function renderMyInspections(container) {
+            const myInspections = store.inspections
+                .filter(i => i.instructor === store.currentUser)
+                .sort((a, b) => new Date(b.date) - new Date(a.date));
+            
+            if (myInspections.length === 0) {
+                container.innerHTML = `
+                    <div class="text-center py-12">
+                        <div class="w-24 h-24 bg-gray-200 rounded-full flex items-center justify-center mx-auto mb-4">
+                            <i class="fas fa-clipboard text-4xl text-gray-400"></i>
+                        </div>
+                        <h3 class="text-xl font-semibold text-gray-600 mb-2">No hay inspecciones</h3>
+                        <p class="text-gray-500 mb-4">Comienza creando tu primera inspección</p>
+                        <button onclick="navigateTo('newInspection')" class="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors">
+                            Nueva Inspección
+                        </button>
+                    </div>
+                `;
+                return;
+            }
+            
+            container.innerHTML = `
+                <div class="grid gap-4 md:grid-cols-2 lg:grid-cols-3 slide-in">
+                    ${myInspections.map(insp => `
+                        <div class="glass-panel rounded-xl p-6 shadow-lg card-hover cursor-pointer" onclick="viewInspectionDetail(${insp.id})">
+                            <div class="flex items-start justify-between mb-4">
+                                <div>
+                                    <h3 class="font-bold text-lg text-gray-800">${insp.equipment}</h3>
+                                    <p class="text-sm text-gray-600">${new Date(insp.date).toLocaleDateString('es-ES')}</p>
+                                </div>
+                                <span class="px-3 py-1 rounded-full text-xs font-semibold ${insp.status === 'completed' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}">
+                                    ${insp.status === 'completed' ? 'Finalizada' : 'Borrador'}
+                                </span>
+                            </div>
+                            
+                            ${insp.status === 'completed' ? `
+                                <div class="mb-4">
+                                    <div class="flex items-center justify-between mb-1">
+                                        <span class="text-sm font-medium">Cumplimiento</span>
+                                        <span class="text-lg font-bold ${insp.score >= 80 ? 'text-green-600' : insp.score >= 60 ? 'text-yellow-600' : 'text-red-600'}">${insp.score.toFixed(1)}%</span>
+                                    </div>
+                                    <div class="w-full bg-gray-200 rounded-full h-2">
+                                        <div class="h-full rounded-full ${insp.score >= 80 ? 'bg-green-500' : insp.score >= 60 ? 'bg-yellow-500' : 'bg-red-500'}" style="width: ${insp.score}%"></div>
+                                    </div>
+                                </div>
+                            ` : '<p class="text-sm text-gray-500 mb-4">En progreso...</p>'}
+                            
+                            <div class="flex items-center justify-between text-sm text-gray-600">
+                                <span><i class="fas fa-tasks mr-1"></i> ${insp.items.filter(i => i.value !== null).length}/${insp.items.length} ítems</span>
+                                ${insp.status === 'draft' ? '<span class="text-blue-600 font-medium">Continuar <i class="fas fa-arrow-right"></i></span>' : ''}
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
+            `;
+        }
+
+        function viewInspectionDetail(id) {
+            const inspection = store.inspections.find(i => i.id === id);
+            if (!inspection) return;
+            
+            if (inspection.status === 'draft') {
+                store.draftInspection = inspection;
+                renderInspectionForm(document.getElementById('contentArea'), inspection);
+                return;
+            }
+            
+            const content = document.getElementById('contentArea');
+            content.innerHTML = `
+                <div class="max-w-4xl mx-auto slide-in">
+                    <button onclick="navigateTo('myInspections')" class="mb-4 text-gray-600 hover:text-gray-800 flex items-center gap-2">
+                        <i class="fas fa-arrow-left"></i> Volver
+                    </button>
+                    
+                    <div class="glass-panel rounded-2xl p-6 lg:p-8 shadow-xl mb-6">
+                        <div class="flex flex-col lg:flex-row lg:items-center justify-between mb-6 gap-4">
+                            <div>
+                                <h2 class="text-2xl font-bold text-gray-800">${inspection.equipment}</h2>
+                                <p class="text-gray-600">${new Date(inspection.date).toLocaleString('es-ES')}</p>
+                                <p class="text-sm text-gray-500 mt-1">Por: ${inspection.instructor}</p>
+                                <p class="text-xs text-blue-600 mt-1">${inspection.items.length} ítems evaluados</p>
+                            </div>
+                            <div class="text-center lg:text-right">
+                                <div class="text-4xl font-bold ${inspection.score >= 80 ? 'text-green-600' : inspection.score >= 60 ? 'text-yellow-600' : 'text-red-600'}">
+                                    ${inspection.score.toFixed(1)}%
+                                </div>
+                                <span class="text-sm text-gray-600">Cumplimiento</span>
+                            </div>
+                        </div>
+                        
+                        <div class="space-y-4">
+                            ${inspection.items.map((item, idx) => `
+                                <div class="border rounded-lg p-4 ${item.value === 1 ? 'border-green-200 bg-green-50' : item.value === 0 ? 'border-red-200 bg-red-50' : 'border-gray-200 bg-gray-50'}">
+                                    <div class="flex items-start justify-between mb-2">
+                                        <span class="font-medium">${idx + 1}. ${item.text}</span>
+                                        <span class="px-2 py-1 rounded text-xs font-semibold ${item.value === 1 ? 'bg-green-200 text-green-800' : item.value === 0 ? 'bg-red-200 text-red-800' : 'bg-gray-200 text-gray-800'}">
+                                            ${item.value === 1 ? 'Cumple' : item.value === 0 ? 'No Cumple' : 'N/A'}
+                                        </span>
+                                    </div>
+                                    ${item.comment ? `<p class="text-sm text-gray-600 mt-2"><i class="fas fa-comment mr-1"></i> ${item.comment}</p>` : ''}
+                                    ${item.image ? `<img src="${item.image}" class="mt-2 h-32 w-auto rounded-lg cursor-pointer hover:opacity-80 transition-opacity" onclick="viewImage('${item.image}')">` : ''}
+                                </div>
+                            `).join('')}
+                        </div>
+                        
+                        ${inspection.generalComments ? `
+                            <div class="mt-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
+                                <h4 class="font-semibold text-blue-900 mb-2">Comentarios Generales</h4>
+                                <p class="text-blue-800">${inspection.generalComments}</p>
+                            </div>
+                        ` : ''}
+                    </div>
+                </div>
+            `;
+        }
+
+        // Facilitador & Admin Views
+        function renderDashboard(container) {
+            const completedInspections = store.inspections.filter(i => i.status === 'completed');
+            const avgScore = completedInspections.length > 0 
+                ? completedInspections.reduce((sum, i) => sum + i.score, 0) / completedInspections.length 
+                : 0;
+            
+            const byEquipment = {};
+            store.equipments.forEach(eq => {
+                const eqInspections = completedInspections.filter(i => i.equipment === eq);
+                byEquipment[eq] = eqInspections.length > 0 
+                    ? eqInspections.reduce((sum, i) => sum + i.score, 0) / eqInspections.length 
+                    : 0;
+            });
+            
+            const itemsByEquipment = {};
+            store.equipments.forEach(eq => {
+                itemsByEquipment[eq] = store.checklistsByEquipment[eq] ? store.checklistsByEquipment[eq].length : 0;
+            });
+            
+            container.innerHTML = `
+                <div class="space-y-6 slide-in">
+                    <!-- KPI Cards -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                        <div class="glass-panel rounded-xl p-6 shadow-lg card-hover">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <p class="text-sm text-gray-600 mb-1">Total Inspecciones</p>
+                                    <p class="text-3xl font-bold text-gray-800">${completedInspections.length}</p>
+                                </div>
+                                <div class="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
+                                    <i class="fas fa-clipboard-check text-blue-600 text-xl"></i>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="glass-panel rounded-xl p-6 shadow-lg card-hover">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <p class="text-sm text-gray-600 mb-1">Cumplimiento Promedio</p>
+                                    <p class="text-3xl font-bold ${avgScore >= 80 ? 'text-green-600' : avgScore >= 60 ? 'text-yellow-600' : 'text-red-600'}">${avgScore.toFixed(1)}%</p>
+                                </div>
+                                <div class="w-12 h-12 ${avgScore >= 80 ? 'bg-green-100' : avgScore >= 60 ? 'bg-yellow-100' : 'bg-red-100'} rounded-full flex items-center justify-center">
+                                    <i class="fas fa-chart-line ${avgScore >= 80 ? 'text-green-600' : avgScore >= 60 ? 'text-yellow-600' : 'text-red-600'} text-xl"></i>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="glass-panel rounded-xl p-6 shadow-lg card-hover">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <p class="text-sm text-gray-600 mb-1">Equipos Configurados</p>
+                                    <p class="text-3xl font-bold text-gray-800">${store.equipments.length}</p>
+                                </div>
+                                <div class="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center">
+                                    <i class="fas fa-cogs text-purple-600 text-xl"></i>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="glass-panel rounded-xl p-6 shadow-lg card-hover">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <p class="text-sm text-gray-600 mb-1">Total Ítems Checklist</p>
+                                    <p class="text-3xl font-bold text-gray-800">${Object.values(itemsByEquipment).reduce((a, b) => a + b, 0)}</p>
+                                </div>
+                                <div class="w-12 h-12 bg-orange-100 rounded-full flex items-center justify-center">
+                                    <i class="fas fa-list-check text-orange-600 text-xl"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Equipment Summary -->
+                    <div class="glass-panel rounded-xl p-6 shadow-lg">
+                        <h3 class="font-bold text-lg mb-4">Resumen por Equipo</h3>
+                        <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+                            ${store.equipments.map(eq => {
+                                const eqInspections = completedInspections.filter(i => i.equipment === eq);
+                                const avg = eqInspections.length > 0 ? eqInspections.reduce((sum, i) => sum + i.score, 0) / eqInspections.length : 0;
+                                const itemCount = itemsByEquipment[eq] || 0;
+                                return `
+                                    <div class="border rounded-lg p-4 hover:shadow-md transition-shadow cursor-pointer" onclick="navigateTo('inspections')">
+                                        <div class="flex items-center justify-between mb-2">
+                                            <h4 class="font-semibold">${eq}</h4>
+                                            <span class="text-xs px-2 py-1 bg-gray-100 rounded-full">${itemCount} ítems</span>
+                                        </div>
+                                        <div class="flex items-center justify-between">
+                                            <span class="text-sm text-gray-600">${eqInspections.length} inspecciones</span>
+                                            <span class="font-bold ${avg >= 80 ? 'text-green-600' : avg >= 60 ? 'text-yellow-600' : 'text-red-600'}">${avg > 0 ? avg.toFixed(1) + '%' : 'N/A'}</span>
+                                        </div>
+                                        ${avg > 0 ? `
+                                            <div class="w-full bg-gray-200 rounded-full h-2 mt-2">
+                                                <div class="h-full rounded-full ${avg >= 80 ? 'bg-green-500' : avg >= 60 ? 'bg-yellow-500' : 'bg-red-500'}" style="width: ${avg}%"></div>
+                                            </div>
+                                        ` : ''}
+                                    </div>
+                                `;
+                            }).join('')}
+                        </div>
+                    </div>
+                    
+                    <!-- Charts -->
+                    <div class="grid lg:grid-cols-2 gap-6">
+                        <div class="glass-panel rounded-xl p-6 shadow-lg">
+                            <h3 class="font-bold text-lg mb-4">Cumplimiento por Equipo</h3>
+                            <div class="chart-container">
+                                <canvas id="equipmentChart"></canvas>
+                            </div>
+                        </div>
+                        
+                        <div class="glass-panel rounded-xl p-6 shadow-lg">
+                            <h3 class="font-bold text-lg mb-4">Tendencia Mensual</h3>
+                            <div class="chart-container">
+                                <canvas id="trendChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Recent Inspections -->
+                    <div class="glass-panel rounded-xl p-6 shadow-lg">
+                        <div class="flex items-center justify-between mb-4">
+                            <h3 class="font-bold text-lg">Inspecciones Recientes</h3>
+                            <button onclick="navigateTo('inspections')" class="text-blue-600 hover:text-blue-800 text-sm font-medium">
+                                Ver todas <i class="fas fa-arrow-right ml-1"></i>
+                            </button>
+                        </div>
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left">
+                                <thead class="bg-gray-50">
+                                    <tr>
+                                        <th class="px-4 py-3 text-sm font-semibold text-gray-600">Fecha</th>
+                                        <th class="px-4 py-3 text-sm font-semibold text-gray-600">Equipo</th>
+                                        <th class="px-4 py-3 text-sm font-semibold text-gray-600">Instructor</th>
+                                        <th class="px-4 py-3 text-sm font-semibold text-gray-600">Ítems</th>
+                                        <th class="px-4 py-3 text-sm font-semibold text-gray-600">Score</th>
+                                        <th class="px-4 py-3 text-sm font-semibold text-gray-600">Estado</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-gray-200">
+                                    ${completedInspections.slice(0, 5).map(i => `
+                                        <tr class="hover:bg-gray-50 transition-colors cursor-pointer" onclick="viewInspectionDetailFacilitador(${i.id})">
+                                            <td class="px-4 py-3 text-sm">${new Date(i.date).toLocaleDateString('es-ES')}</td>
+                                            <td class="px-4 py-3 font-medium">${i.equipment}</td>
+                                            <td class="px-4 py-3 text-sm">${i.instructor}</td>
+                                            <td class="px-4 py-3 text-sm">${i.items.length}</td>
+                                            <td class="px-4 py-3">
+                                                <span class="font-bold ${i.score >= 80 ? 'text-green-600' : i.score >= 60 ? 'text-yellow-600' : 'text-red-600'}">${i.score.toFixed(1)}%</span>
+                                            </td>
+                                            <td class="px-4 py-3">
+                                                <span class="px-2 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-800">Finalizada</span>
+                                            </td>
+                                        </tr>
+                                    `).join('')}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            setTimeout(() => {
+                initCharts(byEquipment, completedInspections);
+            }, 100);
+        }
+
+        function initCharts(byEquipment, inspections) {
+            const eqCtx = document.getElementById('equipmentChart');
+            if (eqCtx) {
+                new Chart(eqCtx, {
+                    type: 'bar',
+                    data: {
+                        labels: Object.keys(byEquipment),
+                        datasets: [{
+                            label: '% Cumplimiento',
+                            data: Object.values(byEquipment),
+                            backgroundColor: Object.values(byEquipment).map(v => v >= 80 ? '#10b981' : v >= 60 ? '#f59e0b' : '#ef4444'),
+                            borderRadius: 6
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { display: false }
+                        },
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                max: 100,
+                                ticks: {
+                                    callback: function(value) {
+                                        return value + '%';
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+            
+            const trendCtx = document.getElementById('trendChart');
+            if (trendCtx) {
+                const months = {};
+                inspections.forEach(i => {
+                    const d = new Date(i.date);
+                    const key = `${d.getMonth() + 1}/${d.getFullYear()}`;
+                    if (!months[key]) months[key] = { sum: 0, count: 0 };
+                    months[key].sum += i.score;
+                    months[key].count++;
+                });
+                
+                const sortedMonths = Object.keys(months).sort();
+                
+                new Chart(trendCtx, {
+                    type: 'line',
+                    data: {
+                        labels: sortedMonths,
+                        datasets: [{
+                            label: 'Promedio Mensual',
+                            data: sortedMonths.map(m => months[m].sum / months[m].count),
+                            borderColor: '#3b82f6',
+                            backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                            fill: true,
+                            tension: 0.4,
+                            pointRadius: 4,
+                            pointBackgroundColor: '#3b82f6'
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { display: false }
+                        },
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                max: 100,
+                                ticks: {
+                                    callback: function(value) {
+                                        return value + '%';
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+        }
+
+        // CALENDARIO CORREGIDO - Ahora respeta el filtro por equipo
+        function renderCalendar(container) {
+            const now = new Date();
+            const currentMonth = now.getMonth();
+            const currentYear = now.getFullYear();
+            
+            const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
+            const firstDay = new Date(currentYear, currentMonth, 1).getDay();
+            
+            // Usar el filtro almacenado o vacío (todos)
+            const selectedEquipment = store.calendarFilter || '';
+            
+            // Filtrar inspecciones por equipo si hay selección
+            let filteredInspections = store.inspections.filter(i => i.status === 'completed');
+            if (selectedEquipment) {
+                filteredInspections = filteredInspections.filter(i => i.equipment === selectedEquipment);
+            }
+            
+            // Agrupar por día solo las inspecciones filtradas
+            const inspectionsByDay = {};
+            filteredInspections.forEach(i => {
+                const d = new Date(i.date);
+                if (d.getMonth() === currentMonth && d.getFullYear() === currentYear) {
+                    const day = d.getDate();
+                    if (!inspectionsByDay[day]) inspectionsByDay[day] = [];
+                    inspectionsByDay[day].push(i);
+                }
+            });
+            
+            let calendarHTML = `
+                <div class="slide-in space-y-6">
+                    <div class="glass-panel rounded-xl p-6 shadow-lg">
+                        <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-6 gap-4">
+                            <div>
+                                <h3 class="text-xl font-bold">Calendario de Inspecciones</h3>
+                                ${selectedEquipment ? `
+                                    <p class="text-sm text-blue-600 mt-1">
+                                        <i class="fas fa-filter mr-1"></i> 
+                                        Mostrando: ${selectedEquipment}
+                                        <button onclick="clearCalendarFilter()" class="ml-2 text-xs underline hover:text-blue-800">(Limpiar filtro)</button>
+                                    </p>
+                                ` : '<p class="text-sm text-gray-500 mt-1">Mostrando todos los equipos</p>'}
+                            </div>
+                            <select id="calendarEquipment" onchange="applyCalendarFilter(this.value)" class="px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500">
+                                <option value="">Todos los equipos</option>
+                                ${store.equipments.map(e => `
+                                    <option value="${e}" ${e === selectedEquipment ? 'selected' : ''}>${e}</option>
+                                `).join('')}
+                            </select>
+                        </div>
+                        
+                        <div class="grid grid-cols-7 gap-2 mb-2">
+                            ${['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'].map(d => `
+                                <div class="text-center font-semibold text-gray-600 py-2">${d}</div>
+                            `).join('')}
+                        </div>
+                        
+                        <div class="grid grid-cols-7 gap-2" id="calendarGrid">
+            `;
+            
+            for (let i = 0; i < firstDay; i++) {
+                calendarHTML += `<div class="calendar-day empty h-24 bg-gray-50 rounded-lg"></div>`;
+            }
+            
+            for (let day = 1; day <= daysInMonth; day++) {
+                const hasInspection = inspectionsByDay[day] && inspectionsByDay[day].length > 0;
+                const bgColor = hasInspection ? 'bg-green-100 border-green-300 hover:bg-green-200' : 'bg-red-50 border-red-200 hover:bg-red-100';
+                const indicator = hasInspection ? '<div class="w-2 h-2 bg-green-500 rounded-full mx-auto mt-1"></div>' : '<div class="w-2 h-2 bg-red-400 rounded-full mx-auto mt-1"></div>';
+                
+                calendarHTML += `
+                    <div class="calendar-day h-24 ${bgColor} border rounded-lg p-2 cursor-pointer relative has-tooltip" 
+                         onclick="${hasInspection ? `showDayInspections(${day}, '${selectedEquipment}')` : ''}">
+                        <div class="font-semibold text-gray-800">${day}</div>
+                        ${indicator}
+                        ${hasInspection ? `<div class="text-xs text-gray-600 mt-1">${inspectionsByDay[day].length} insp.</div>` : '<div class="text-xs text-red-600 mt-1">Sin datos</div>'}
+                    </div>
+                `;
+            }
+            
+            calendarHTML += `
+                        </div>
+                        
+                        <div class="flex items-center justify-center gap-6 mt-6 text-sm">
+                            <div class="flex items-center gap-2">
+                                <div class="w-4 h-4 bg-green-100 border border-green-300 rounded"></div>
+                                <span>Con inspección${selectedEquipment ? ` (${selectedEquipment})` : ''}</span>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <div class="w-4 h-4 bg-red-50 border border-red-200 rounded"></div>
+                                <span>Sin inspección${selectedEquipment ? ` (${selectedEquipment})` : ''}</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div id="dayDetails" class="hidden glass-panel rounded-xl p-6 shadow-lg">
+                        <!-- Details loaded dynamically -->
+                    </div>
+                </div>
+            `;
+            
+            container.innerHTML = calendarHTML;
+        }
+
+        // NUEVA FUNCIÓN: Aplicar filtro al calendario
+        function applyCalendarFilter(equipment) {
+            store.calendarFilter = equipment;
+            renderCalendar(document.getElementById('contentArea'));
+            showToast(equipment ? `Filtrando por: ${equipment}` : 'Mostrando todos los equipos', 'success');
+        }
+
+        // NUEVA FUNCIÓN: Limpiar filtro del calendario
+        function clearCalendarFilter() {
+            store.calendarFilter = '';
+            renderCalendar(document.getElementById('contentArea'));
+            showToast('Filtro limpiado', 'success');
+        }
+
+        // CORREGIDO: Ahora respeta el filtro de equipo al mostrar detalles del día
+        function showDayInspections(day, equipmentFilter) {
+            const details = document.getElementById('dayDetails');
+            const month = new Date().getMonth();
+            const year = new Date().getFullYear();
+            const dateStr = new Date(year, month, day).toLocaleDateString('es-ES', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+            
+            // Filtrar inspecciones del día respetando el filtro de equipo
+            let inspections = store.inspections.filter(i => {
+                const d = new Date(i.date);
+                return d.getDate() === day && d.getMonth() === month && d.getFullYear() === year && i.status === 'completed';
+            });
+            
+            // Aplicar filtro de equipo si existe
+            if (equipmentFilter) {
+                inspections = inspections.filter(i => i.equipment === equipmentFilter);
+            }
+            
+            details.classList.remove('hidden');
+            details.innerHTML = `
+                <div class="flex items-center justify-between mb-4">
+                    <div>
+                        <h3 class="text-lg font-bold">Inspecciones del ${dateStr}</h3>
+                        ${equipmentFilter ? `<p class="text-sm text-blue-600"><i class="fas fa-filter mr-1"></i> ${equipmentFilter}</p>` : ''}
+                    </div>
+                    <button onclick="document.getElementById('dayDetails').classList.add('hidden')" class="text-gray-500 hover:text-gray-700">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                ${inspections.length === 0 ? `
+                    <div class="text-center py-8 text-gray-500">
+                        <i class="fas fa-inbox text-4xl mb-2"></i>
+                        <p>No hay inspecciones para este día${equipmentFilter ? ` de ${equipmentFilter}` : ''}</p>
+                    </div>
+                ` : `
+                    <div class="grid gap-4 md:grid-cols-2">
+                        ${inspections.map(i => `
+                            <div class="border rounded-lg p-4 hover:shadow-md transition-shadow cursor-pointer" onclick="viewInspectionDetailFacilitador(${i.id})">
+                                <div class="flex items-center justify-between mb-2">
+                                    <span class="font-semibold">${i.equipment}</span>
+                                    <span class="text-lg font-bold ${i.score >= 80 ? 'text-green-600' : i.score >= 60 ? 'text-yellow-600' : 'text-red-600'}">${i.score.toFixed(1)}%</span>
+                                </div>
+                                <p class="text-sm text-gray-600">${i.instructor}</p>
+                                <p class="text-xs text-gray-500">${new Date(i.date).toLocaleTimeString('es-ES')}</p>
+                                <p class="text-xs text-gray-500 mt-1">${i.items.length} ítems evaluados</p>
+                            </div>
+                        `).join('')}
+                    </div>
+                `}
+            `;
+            details.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+
+        function renderAllInspections(container) {
+            const inspections = store.inspections.filter(i => i.status === 'completed').sort((a, b) => new Date(b.date) - new Date(a.date));
+            
+            container.innerHTML = `
+                <div class="slide-in space-y-4">
+                    <div class="flex flex-col sm:flex-row gap-4 mb-6">
+                        <input type="text" placeholder="Buscar por equipo o instructor..." 
+                            class="flex-1 px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500"
+                            onkeyup="filterInspections(this.value)">
+                        <select onchange="filterByEquipment(this.value)" class="px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500">
+                            <option value="">Todos los equipos</option>
+                            ${store.equipments.map(e => `<option value="${e}">${e}</option>`).join('')}
+                        </select>
+                    </div>
+                    
+                    <div class="glass-panel rounded-xl shadow-lg overflow-hidden">
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left" id="inspectionsTable">
+                                <thead class="bg-gray-50">
+                                    <tr>
+                                        <th class="px-4 py-3 text-sm font-semibold text-gray-600">ID</th>
+                                        <th class="px-4 py-3 text-sm font-semibold text-gray-600">Fecha</th>
+                                        <th class="px-4 py-3 text-sm font-semibold text-gray-600">Equipo</th>
+                                        <th class="px-4 py-3 text-sm font-semibold text-gray-600">Instructor</th>
+                                        <th class="px-4 py-3 text-sm font-semibold text-gray-600">Ítems</th>
+                                        <th class="px-4 py-3 text-sm font-semibold text-gray-600">Score</th>
+                                        <th class="px-4 py-3 text-sm font-semibold text-gray-600">Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-gray-200">
+                                    ${inspections.map(i => `
+                                        <tr class="hover:bg-gray-50 transition-colors inspection-row" data-equipment="${i.equipment}" data-search="${i.equipment.toLowerCase()} ${i.instructor.toLowerCase()}">
+                                            <td class="px-4 py-3 text-sm font-mono">#${i.id.toString().slice(-4)}</td>
+                                            <td class="px-4 py-3 text-sm">${new Date(i.date).toLocaleString('es-ES')}</td>
+                                            <td class="px-4 py-3 font-medium">${i.equipment}</td>
+                                            <td class="px-4 py-3 text-sm">${i.instructor}</td>
+                                            <td class="px-4 py-3 text-sm">${i.items.length}</td>
+                                            <td class="px-4 py-3">
+                                                <span class="font-bold ${i.score >= 80 ? 'text-green-600' : i.score >= 60 ? 'text-yellow-600' : 'text-red-600'}">${i.score.toFixed(1)}%</span>
+                                            </td>
+                                            <td class="px-4 py-3">
+                                                <button onclick="viewInspectionDetailFacilitador(${i.id})" class="text-blue-600 hover:text-blue-800 mr-2">
+                                                    <i class="fas fa-eye"></i>
+                                                </button>
+                                                ${store.currentRole === 'admin' ? `
+                                                    <button onclick="deleteInspection(${i.id})" class="text-red-600 hover:text-red-800">
+                                                        <i class="fas fa-trash"></i>
+                                                    </button>
+                                                ` : ''}
+                                            </td>
+                                        </tr>
+                                    `).join('')}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function viewInspectionDetailFacilitador(id) {
+            const inspection = store.inspections.find(i => i.id === id);
+            if (!inspection) return;
+            
+            const content = document.getElementById('contentArea');
+            content.innerHTML = `
+                <div class="max-w-4xl mx-auto slide-in">
+                    <button onclick="navigateTo('inspections')" class="mb-4 text-gray-600 hover:text-gray-800 flex items-center gap-2">
+                        <i class="fas fa-arrow-left"></i> Volver a la lista
+                    </button>
+                    
+                    <div class="glass-panel rounded-2xl p-6 lg:p-8 shadow-xl mb-6">
+                        <div class="flex flex-col lg:flex-row lg:items-center justify-between mb-6 gap-4">
+                            <div>
+                                <h2 class="text-2xl font-bold text-gray-800">${inspection.equipment}</h2>
+                                <p class="text-gray-600">${new Date(inspection.date).toLocaleString('es-ES')}</p>
+                                <p class="text-sm text-gray-500 mt-1">Por: ${inspection.instructor}</p>
+                                <p class="text-xs text-blue-600 mt-1">${inspection.items.length} ítems en checklist del equipo</p>
+                            </div>
+                            <div class="text-center lg:text-right">
+                                <div class="text-4xl font-bold ${inspection.score >= 80 ? 'text-green-600' : inspection.score >= 60 ? 'text-yellow-600' : 'text-red-600'}">
+                                    ${inspection.score.toFixed(1)}%
+                                </div>
+                                <span class="text-sm text-gray-600">Cumplimiento</span>
+                            </div>
+                        </div>
+                        
+                        <div class="space-y-4">
+                            ${inspection.items.map((item, idx) => `
+                                <div class="border rounded-lg p-4 ${item.value === 1 ? 'border-green-200 bg-green-50' : item.value === 0 ? 'border-red-200 bg-red-50' : 'border-gray-200 bg-gray-50'}">
+                                    <div class="flex items-start justify-between mb-2">
+                                        <span class="font-medium">${idx + 1}. ${item.text}</span>
+                                        <span class="px-2 py-1 rounded text-xs font-semibold ${item.value === 1 ? 'bg-green-200 text-green-800' : item.value === 0 ? 'bg-red-200 text-red-800' : 'bg-gray-200 text-gray-800'}">
+                                            ${item.value === 1 ? 'Cumple' : item.value === 0 ? 'No Cumple' : 'N/A'}
+                                        </span>
+                                    </div>
+                                    <p class="text-xs text-gray-500 mb-1">Categoría: ${item.category}</p>
+                                    ${item.comment ? `<p class="text-sm text-gray-600 mt-2"><i class="fas fa-comment mr-1"></i> ${item.comment}</p>` : ''}
+                                    ${item.image ? `<img src="${item.image}" class="mt-2 h-32 w-auto rounded-lg cursor-pointer hover:opacity-80 transition-opacity" onclick="viewImage('${item.image}')">` : ''}
+                                </div>
+                            `).join('')}
+                        </div>
+                        
+                        ${inspection.generalComments ? `
+                            <div class="mt-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
+                                <h4 class="font-semibold text-blue-900 mb-2">Comentarios Generales</h4>
+                                <p class="text-blue-800">${inspection.generalComments}</p>
+                            </div>
+                        ` : ''}
+                    </div>
+                </div>
+            `;
+        }
+
+        function filterInspections(search) {
+            const rows = document.querySelectorAll('.inspection-row');
+            const term = search.toLowerCase();
+            rows.forEach(row => {
+                const data = row.getAttribute('data-search');
+                row.style.display = data.includes(term) ? '' : 'none';
+            });
+        }
+
+        function filterByEquipment(equipment) {
+            const rows = document.querySelectorAll('.inspection-row');
+            rows.forEach(row => {
+                if (!equipment || row.getAttribute('data-equipment') === equipment) {
+                    row.style.display = '';
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+        }
+
+        function deleteInspection(id) {
+            if (confirm('¿Estás seguro de eliminar esta inspección?')) {
+                store.inspections = store.inspections.filter(i => i.id !== id);
+                
+            queueSaveState();
+                showToast('Inspección eliminada', 'success');
+                navigateTo('inspections');
+            }
+        }
+
+        function renderReports(container) {
+            container.innerHTML = `
+                <div class="slide-in max-w-4xl mx-auto space-y-6">
+                    <div class="glass-panel rounded-xl p-6 shadow-lg">
+                        <h3 class="text-xl font-bold mb-6">Exportar Reportes</h3>
+                        
+                        <div class="grid md:grid-cols-2 gap-6">
+                            <div class="space-y-4">
+                                <h4 class="font-semibold text-gray-700">Filtros</h4>
+                                <div>
+                                    <label class="block text-sm text-gray-600 mb-1">Fecha Inicio</label>
+                                    <input type="date" id="reportStart" class="w-full px-3 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500">
+                                </div>
+                                <div>
+                                    <label class="block text-sm text-gray-600 mb-1">Fecha Fin</label>
+                                    <input type="date" id="reportEnd" class="w-full px-3 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500">
+                                </div>
+                                <div>
+                                    <label class="block text-sm text-gray-600 mb-1">Equipo</label>
+                                    <select id="reportEquipment" class="w-full px-3 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500">
+                                        <option value="">Todos</option>
+                                        ${store.equipments.map(e => `<option value="${e}">${e}</option>`).join('')}
+                                    </select>
+                                </div>
+                            </div>
+                            
+                            <div class="space-y-4">
+                                <h4 class="font-semibold text-gray-700">Formato de Exportación</h4>
+                                <button onclick="exportToCSV()" class="w-full flex items-center justify-center gap-3 px-6 py-4 bg-green-600 text-white rounded-xl hover:bg-green-700 transition-all btn-press shadow-lg">
+                                    <i class="fas fa-file-excel text-2xl"></i>
+                                    <div class="text-left">
+                                        <div class="font-semibold">Exportar CSV</div>
+                                        <div class="text-sm opacity-90">.xlsx completo con imágenes</div>
+                                    </div>
+                                </button>
+                                
+                                <button onclick="exportToCSV()" class="w-full flex items-center justify-center gap-3 px-6 py-4 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-all btn-press shadow-lg">
+                                    <i class="fas fa-file-csv text-2xl"></i>
+                                    <div class="text-left">
+                                        <div class="font-semibold">Exportar a CSV</div>
+                                        <div class="text-sm opacity-90">Datos tabulares</div>
+                                    </div>
+                                </button>
+                                
+                                <button onclick="printReport()" class="w-full flex items-center justify-center gap-3 px-6 py-4 bg-gray-600 text-white rounded-xl hover:bg-gray-700 transition-all btn-press shadow-lg">
+                                    <i class="fas fa-print text-2xl"></i>
+                                    <div class="text-left">
+                                        <div class="font-semibold">Vista de Impresión</div>
+                                        <div class="text-sm opacity-90">PDF / Impresora</div>
+                                    </div>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="glass-panel rounded-xl p-6 shadow-lg">
+                        <h4 class="font-semibold mb-4">Resumen Estadístico</h4>
+                        <div id="reportStats" class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                            <!-- Stats loaded dynamically -->
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            updateReportStats();
+        }
+
+        function updateReportStats() {
+            const inspections = store.inspections.filter(i => i.status === 'completed');
+            const stats = document.getElementById('reportStats');
+            if (!stats) return;
+            
+            const avg = inspections.length > 0 ? inspections.reduce((sum, i) => sum + i.score, 0) / inspections.length : 0;
+            const byEquipment = {};
+            inspections.forEach(i => {
+                if (!byEquipment[i.equipment]) byEquipment[i.equipment] = { count: 0, sum: 0 };
+                byEquipment[i.equipment].count++;
+                byEquipment[i.equipment].sum += i.score;
+            });
+            
+            const bestEquipment = Object.keys(byEquipment).length > 0 
+                ? Object.keys(byEquipment).reduce((a, b) => (byEquipment[a].sum/byEquipment[a].count) > (byEquipment[b].sum/byEquipment[b].count) ? a : b)
+                : '-';
+            
+            stats.innerHTML = `
+                <div class="text-center p-4 bg-blue-50 rounded-lg">
+                    <div class="text-2xl font-bold text-blue-600">${inspections.length}</div>
+                    <div class="text-xs text-gray-600">Total Inspecciones</div>
+                </div>
+                <div class="text-center p-4 bg-green-50 rounded-lg">
+                    <div class="text-2xl font-bold text-green-600">${avg.toFixed(1)}%</div>
+                    <div class="text-xs text-gray-600">Promedio General</div>
+                </div>
+                <div class="text-center p-4 bg-purple-50 rounded-lg">
+                    <div class="text-2xl font-bold text-purple-600">${Object.keys(byEquipment).length}</div>
+                    <div class="text-xs text-gray-600">Equipos Activos</div>
+                </div>
+                <div class="text-center p-4 bg-orange-50 rounded-lg">
+                    <div class="text-lg font-bold text-orange-600 truncate">${bestEquipment}</div>
+                    <div class="text-xs text-gray-600">Mejor Equipo</div>
+                </div>
+            `;
+        }
+
+        function escapeCsv(value) {
+            const s = String(value ?? '');
+            const needsQuotes = /[",\n\r]/.test(s);
+            const escaped = s.replace(/"/g, '""');
+            return needsQuotes ? `"${escaped}"` : escaped;
+        }
+
+        function exportToCSV() {
+            const inspections = getFilteredInspections();
+            if (inspections.length === 0) {
+                showToast('No hay datos para exportar', 'error');
+                return;
+            }
+
+            let csv = 'ID,Fecha,Equipo,Instructor,Ítems Evaluados,Score,Estado,Comentarios\n';
+            inspections.forEach(i => {
+                const row = [
+                    i.id,
+                    new Date(i.date).toLocaleString('es-ES'),
+                    i.equipment,
+                    i.instructor,
+                    i.items.length,
+                    i.score.toFixed(2),
+                    i.status,
+                    i.generalComments || ''
+                ].map(escapeCsv).join(',');
+                csv += row + '\n';
+            });
+
+            downloadFile(csv, 'inspecciones.csv', 'text/csv;charset=utf-8');
+            showToast('Archivo CSV descargado', 'success');
+        }
+
+        // Compatibilidad con el botón antiguo
+        function exportToExcel() {
+            exportToCSV();
+        }
+function printReport() {
+            window.print();
+        }
+
+        function getFilteredInspections() {
+            let inspections = store.inspections.filter(i => i.status === 'completed');
+            const start = document.getElementById('reportStart')?.value;
+            const end = document.getElementById('reportEnd')?.value;
+            const equipment = document.getElementById('reportEquipment')?.value;
+            
+            if (start) inspections = inspections.filter(i => new Date(i.date) >= new Date(start));
+            if (end) inspections = inspections.filter(i => new Date(i.date) <= new Date(end));
+            if (equipment) inspections = inspections.filter(i => i.equipment === equipment);
+            
+            return inspections;
+        }
+
+        function downloadFile(content, filename, type) {
+            const blob = new Blob([content], { type });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+
+        // Admin Views
+        function renderUsers(container) {
+            container.innerHTML = `
+                <div class="slide-in max-w-4xl mx-auto">
+                    <div class="glass-panel rounded-xl p-6 shadow-lg mb-6">
+                        <div class="flex items-center justify-between mb-6">
+                            <h3 class="text-xl font-bold">Gestión de Instructores</h3>
+                            <button onclick="addUser()" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors">
+                                <i class="fas fa-plus mr-2"></i> Nuevo Instructor
+                            </button>
+                        </div>
+                        
+                        <div class="space-y-3" id="usersList">
+                            ${store.instructors.map((inst, idx) => `
+                                <div class="flex items-center justify-between p-4 bg-gray-50 rounded-lg border border-gray-200">
+                                    <div class="flex items-center gap-3">
+                                        <div class="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
+                                            <i class="fas fa-user text-blue-600"></i>
+                                        </div>
+                                        <div>
+                                            <div class="font-semibold">${inst}</div>
+                                            <div class="text-sm text-gray-500">Instructor</div>
+                                        </div>
+                                    </div>
+                                    <div class="flex gap-2">
+                                        <button onclick="editUser(${idx})" class="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors">
+                                            <i class="fas fa-edit"></i>
+                                        </button>
+                                        <button onclick="deleteUser(${idx})" class="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function addUser() {
+            const name = prompt('Nombre del nuevo instructor:');
+            if (name && name.trim()) {
+                store.instructors.push(name.trim());
+                showToast('Instructor agregado', 'success');
+                renderUsers(document.getElementById('contentArea'));
+            }
+        }
+
+        function editUser(idx) {
+            const name = prompt('Nuevo nombre:', store.instructors[idx]);
+            if (name && name.trim()) {
+                store.instructors[idx] = name.trim();
+                showToast('Instructor actualizado', 'success');
+                renderUsers(document.getElementById('contentArea'));
+            }
+        }
+
+        function deleteUser(idx) {
+            if (confirm('¿Eliminar este instructor?')) {
+                store.instructors.splice(idx, 1);
+                showToast('Instructor eliminado', 'success');
+                renderUsers(document.getElementById('contentArea'));
+            }
+        }
+
+        // Admin de Checklist por Equipo
+        function renderChecklistAdmin(container) {
+            if (!store.currentEquipmentChecklist) {
+                container.innerHTML = `
+                    <div class="slide-in max-w-4xl mx-auto">
+                        <div class="glass-panel rounded-xl p-8 shadow-lg text-center">
+                            <div class="w-20 h-20 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                                <i class="fas fa-clipboard-list text-3xl text-blue-600"></i>
+                            </div>
+                            <h3 class="text-2xl font-bold mb-2">Gestión de Checklist</h3>
+                            <p class="text-gray-600 mb-6">Selecciona un equipo para ver y editar sus ítems de inspección</p>
+                            
+                            <div class="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                                ${store.equipments.map(eq => {
+                                    const itemCount = store.checklistsByEquipment[eq] ? store.checklistsByEquipment[eq].length : 0;
+                                    return `
+                                        <button onclick="selectEquipmentForChecklist('${eq}')" 
+                                            class="equipment-tab p-6 rounded-xl border-2 border-gray-200 text-left hover:border-blue-300 transition-all">
+                                            <div class="flex items-center justify-between mb-2">
+                                                <h4 class="font-bold text-lg">${eq}</h4>
+                                                <span class="text-2xl font-bold text-blue-600">${itemCount}</span>
+                                            </div>
+                                            <p class="text-sm opacity-80">ítems configurados</p>
+                                            <div class="mt-4 text-sm font-medium">
+                                                ${itemCount > 0 ? 'Click para editar' : 'Click para configurar'}
+                                                <i class="fas fa-arrow-right ml-1"></i>
+                                            </div>
+                                        </button>
+                                    `;
+                                }).join('')}
+                            </div>
+                        </div>
+                    </div>
+                `;
+                return;
+            }
+            
+            const equipment = store.currentEquipmentChecklist;
+            const items = store.checklistsByEquipment[equipment] || [];
+            
+            container.innerHTML = `
+                <div class="slide-in max-w-4xl mx-auto">
+                    <div class="flex items-center gap-4 mb-6">
+                        <button onclick="backToEquipmentSelection()" class="p-2 rounded-lg bg-gray-200 hover:bg-gray-300 transition-colors">
+                            <i class="fas fa-arrow-left"></i>
+                        </button>
+                        <div>
+                            <h3 class="text-2xl font-bold">Checklist: ${equipment}</h3>
+                            <p class="text-gray-600">${items.length} ítems configurados</p>
+                        </div>
+                    </div>
+                    
+                    <div class="glass-panel rounded-xl p-6 shadow-lg mb-6">
+                        <div class="flex items-center justify-between mb-6">
+                            <h4 class="font-semibold text-lg">Ítems de Inspección</h4>
+                            <button onclick="addChecklistItem('${equipment}')" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2">
+                                <i class="fas fa-plus"></i> Agregar Ítem
+                            </button>
+                        </div>
+                        
+                        <div class="space-y-3" id="checklistItemsList">
+                            ${items.length === 0 ? `
+                                <div class="text-center py-8 text-gray-500">
+                                    <i class="fas fa-inbox text-4xl mb-2"></i>
+                                    <p>No hay ítems configurados para este equipo</p>
+                                    <button onclick="addChecklistItem('${equipment}')" class="mt-4 text-blue-600 hover:underline">
+                                        Agregar primer ítem
+                                    </button>
+                                </div>
+                            ` : items.map((item, idx) => `
+                                <div class="flex items-start justify-between p-4 bg-gray-50 rounded-lg border border-gray-200 hover:shadow-md transition-shadow" id="checklist-item-${idx}">
+                                    <div class="flex-1">
+                                        <div class="flex items-center gap-2 mb-1">
+                                            <span class="font-semibold text-gray-800">${idx + 1}. ${item.text}</span>
+                                            <span class="text-xs px-2 py-1 bg-blue-100 text-blue-700 rounded-full">${item.category}</span>
+                                        </div>
+                                    </div>
+                                    <div class="flex gap-2 ml-4">
+                                        <button onclick="editChecklistItem('${equipment}', ${idx})" class="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors" title="Editar">
+                                            <i class="fas fa-edit"></i>
+                                        </button>
+                                        <button onclick="moveChecklistItem('${equipment}', ${idx}, -1)" class="p-2 text-gray-600 hover:bg-gray-200 rounded-lg transition-colors ${idx === 0 ? 'opacity-30 cursor-not-allowed' : ''}" title="Subir" ${idx === 0 ? 'disabled' : ''}>
+                                            <i class="fas fa-arrow-up"></i>
+                                        </button>
+                                        <button onclick="moveChecklistItem('${equipment}', ${idx}, 1)" class="p-2 text-gray-600 hover:bg-gray-200 rounded-lg transition-colors ${idx === items.length - 1 ? 'opacity-30 cursor-not-allowed' : ''}" title="Bajar" ${idx === items.length - 1 ? 'disabled' : ''}>
+                                            <i class="fas fa-arrow-down"></i>
+                                        </button>
+                                        <button onclick="deleteChecklistItem('${equipment}', ${idx})" class="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors" title="Eliminar">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                    
+                    <div class="bg-blue-50 border border-blue-200 rounded-xl p-4 flex items-start gap-3">
+                        <i class="fas fa-info-circle text-blue-600 mt-1"></i>
+                        <div class="text-sm text-blue-800">
+                            <p class="font-semibold mb-1">Información importante</p>
+                            <p>Los cambios realizados en este checklist afectarán solo a las nuevas inspecciones. Las inspecciones ya realizadas conservarán los ítems que tenían al momento de ser creadas.</p>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function selectEquipmentForChecklist(equipment) {
+            store.currentEquipmentChecklist = equipment;
+            renderChecklistAdmin(document.getElementById('contentArea'));
+        }
+
+        function backToEquipmentSelection() {
+            store.currentEquipmentChecklist = null;
+            renderChecklistAdmin(document.getElementById('contentArea'));
+        }
+
+        function addChecklistItem(equipment) {
+            const text = prompt('Texto del ítem de inspección:');
+            if (!text || !text.trim()) return;
+            
+            const category = prompt('Categoría (ej: 5S, Seguridad, Mantenimiento, etc.):') || 'General';
+            
+            if (!store.checklistsByEquipment[equipment]) {
+                store.checklistsByEquipment[equipment] = [];
+            }
+            
+            const newItem = {
+                id: Date.now(),
+                text: text.trim(),
+                category: category.trim()
+            };
+            
+            store.checklistsByEquipment[equipment].push(newItem);
+            
+            queueSaveState();
+            
+            showToast('Ítem agregado correctamente', 'success');
+            renderChecklistAdmin(document.getElementById('contentArea'));
+        }
+
+        function editChecklistItem(equipment, idx) {
+            const item = store.checklistsByEquipment[equipment][idx];
+            const text = prompt('Texto del ítem:', item.text);
+            if (!text || !text.trim()) return;
+            
+            const category = prompt('Categoría:', item.category);
+            
+            store.checklistsByEquipment[equipment][idx] = {
+                ...item,
+                text: text.trim(),
+                category: (category || 'General').trim()
+            };
+            
+            
+            queueSaveState();
+            showToast('Ítem actualizado', 'success');
+            renderChecklistAdmin(document.getElementById('contentArea'));
+        }
+
+        function moveChecklistItem(equipment, idx, direction) {
+            const items = store.checklistsByEquipment[equipment];
+            const newIdx = idx + direction;
+            
+            if (newIdx < 0 || newIdx >= items.length) return;
+            
+            [items[idx], items[newIdx]] = [items[newIdx], items[idx]];
+            
+            
+            queueSaveState();
+            renderChecklistAdmin(document.getElementById('contentArea'));
+        }
+
+        function deleteChecklistItem(equipment, idx) {
+            if (!confirm('¿Estás seguro de eliminar este ítem del checklist?\n\nEsta acción no afectará las inspecciones ya realizadas.')) {
+                return;
+            }
+            
+            store.checklistsByEquipment[equipment].splice(idx, 1);
+            
+            queueSaveState();
+            
+            showToast('Ítem eliminado', 'success');
+            renderChecklistAdmin(document.getElementById('contentArea'));
+        }
+
+        function loadLastDraft() {
+            const draft = store.inspections.find(i => i.instructor === store.currentUser && i.status === 'draft');
+            if (draft) {
+                store.draftInspection = draft;
+                renderInspectionForm(document.getElementById('contentArea'), draft);
+                showToast('Borrador cargado', 'success');
+            }
+        }
+
+        function showToast(message, type = 'success') {
+            const toast = document.getElementById('toast');
+            const icon = document.getElementById('toastIcon');
+            const msg = document.getElementById('toastMessage');
+            
+            msg.textContent = message;
+            icon.className = type === 'success' ? 'fas fa-check-circle text-green-400' : 'fas fa-exclamation-circle text-red-400';
+            
+            toast.classList.remove('translate-y-20');
+            setTimeout(() => {
+                toast.classList.add('translate-y-20');
+            }, 3000);
+        }
+
+        function toggleSidebar() {
+            const sidebar = document.querySelector('aside');
+            sidebar.classList.toggle('hidden');
+            sidebar.classList.toggle('fixed');
+            sidebar.classList.toggle('inset-0');
+            sidebar.classList.toggle('z-40');
+        }
+    </script>
+</body>
+</html>
