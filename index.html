@@ -6,7 +6,6 @@
     <title>Condiciones Básicas - Clasificación Final</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
     <style>
@@ -229,7 +228,7 @@
                     </p>
                 </div>
 
-<div id="instructorSelectDiv" class="hidden">
+                <div id="instructorSelectDiv" class="hidden">
                     <label class="block text-sm font-medium text-gray-700 mb-2">Selecciona tu nombre</label>
                     <select id="instructorSelect" class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all">
                         <option value="">-- Seleccionar instructor --</option>
@@ -460,80 +459,297 @@
         const store = {
             currentUser: null,
             currentRole: null,
-            inspections: JSON.parse(localStorage.getItem('inspections') || '[]'),
-            checklistsByEquipment: JSON.parse(localStorage.getItem('checklistsByEquipment') || JSON.stringify(defaultChecklists)),
+            currentUserId: null,
+            inspections: [], // Ya no usamos localStorage, solo Supabase
+            checklistsByEquipment: JSON.parse(JSON.stringify(defaultChecklists)),
             equipments: ['Tazamania', 'Kaisen', 'Innova 360', 'Recuperadores', 'Sinergía'],
             instructors: ['Juan David Cadavid', 'Andres Felipe Mendez', 'Fabian Alzate'],
             draftInspection: null,
             currentEquipmentChecklist: null,
-            calendarFilter: '' // Nuevo: filtro actual del calendario
+            calendarFilter: ''
         };
 
         // =========================
-        // Supabase (Auth + Sync)
+        // Supabase Configuration
         // =========================
-        // IMPORTANTE: En GitHub Pages no se pueden ocultar estas variables.
-        // Usa SIEMPRE RLS (políticas) en Supabase para proteger la data.
         const SUPABASE_URL = 'https://ukhzzznwoezsuyzrytjr.supabase.co';
-        const SUPABASE_ANON_KEY = 'sb_publishable_At6yI_QJeXKNEvg-jQJobQ_7OJDN8iQ';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVraHp6em53b2V6c3V5enJ5dGpyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDE1MzY0NjAsImV4cCI6MjA1NzExMjQ2MH0.0wKD0-aLr4U--Q7e5Mn1OdV7X7mH3wH2b8t6k4e8y8Q';
 
-        const supabaseClient = (SUPABASE_URL.startsWith('http') && SUPABASE_ANON_KEY.startsWith('ey'))
+        const supabaseClient = (SUPABASE_URL && SUPABASE_ANON_KEY)
             ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
             : null;
 
-        let currentAuthUserId = null;
-        let saveDebounceTimer = null;
-
-        async function loadStateFromSupabase() {
-            if (!supabaseClient || !currentAuthUserId) return;
-
-            const { data, error } = await supabaseClient
-                .from('app_state')
-                .select('state')
-                .eq('user_id', currentAuthUserId)
-                .maybeSingle();
-
-            if (error) {
-                console.warn('Supabase load error:', error);
+        // =========================
+        // INSPECTIONS - SUPABASE CRUD
+        // =========================
+        
+        // Cargar TODAS las inspecciones de la base de datos compartida
+        async function loadAllInspections() {
+            if (!supabaseClient) {
+                console.warn('Supabase no está configurado');
                 return;
             }
-
-            if (!data?.state) return;
-
-            const loaded = data.state;
-            store.inspections = Array.isArray(loaded.inspections) ? loaded.inspections : store.inspections;
-            store.checklistsByEquipment = loaded.checklistsByEquipment || store.checklistsByEquipment;
-            store.equipments = Array.isArray(loaded.equipments) ? loaded.equipments : store.equipments;
-            store.instructors = Array.isArray(loaded.instructors) ? loaded.instructors : store.instructors;
-        }
-
-        function queueSaveState() {
-            if (!supabaseClient || !currentAuthUserId) return;
-            if (saveDebounceTimer) clearTimeout(saveDebounceTimer);
-            saveDebounceTimer = setTimeout(() => { void saveStateToSupabase(); }, 800);
-        }
-
-        async function saveStateToSupabase() {
-            if (!supabaseClient || !currentAuthUserId) return;
-
-            const payload = {
-                user_id: currentAuthUserId,
-                state: {
-                    inspections: store.inspections,
-                    checklistsByEquipment: store.checklistsByEquipment,
-                    equipments: store.equipments,
-                    instructors: store.instructors
-                },
-                updated_at: new Date().toISOString()
-            };
-
-            const { error } = await supabaseClient
-                .from('app_state')
-                .upsert(payload, { onConflict: 'user_id' });
-
-            if (error) {
-                console.warn('Supabase save error:', error);
+            
+            showLoading(true);
+            try {
+                const { data, error } = await supabaseClient
+                    .from('inspections')
+                    .select('*')
+                    .order('created_at', { ascending: false });
+                
+                if (error) {
+                    console.error('Error cargando inspecciones:', error);
+                    showToast('Error al cargar inspecciones: ' + error.message, 'error');
+                    return;
+                }
+                
+                // Transformar los datos de Supabase al formato de la app
+                store.inspections = data.map(row => ({
+                    id: row.id,
+                    instructor: row.instructor,
+                    equipment: row.equipment,
+                    date: row.date,
+                    status: row.status,
+                    items: row.items || [],
+                    generalComments: row.general_comments || '',
+                    score: row.score || 0,
+                    completedAt: row.completed_at,
+                    createdBy: row.created_by,
+                    createdAt: row.created_at
+                }));
+                
+                console.log(`Cargadas ${store.inspections.length} inspecciones`);
+            } catch (e) {
+                console.error('Error:', e);
+                showToast('Error de conexión', 'error');
+            } finally {
+                showLoading(false);
             }
+        }
+        
+        // Guardar una nueva inspección o actualizar existente
+        async function saveInspectionToSupabase(inspection) {
+            if (!supabaseClient) {
+                showToast('Supabase no está configurado', 'error');
+                return false;
+            }
+            
+            try {
+                const payload = {
+                    id: inspection.id,
+                    instructor: inspection.instructor,
+                    equipment: inspection.equipment,
+                    date: inspection.date,
+                    status: inspection.status,
+                    items: inspection.items,
+                    general_comments: inspection.generalComments,
+                    score: inspection.score,
+                    completed_at: inspection.completedAt || null,
+                    created_by: store.currentUserId,
+                    updated_at: new Date().toISOString()
+                };
+                
+                const { error } = await supabaseClient
+                    .from('inspections')
+                    .upsert(payload, { onConflict: 'id' });
+                
+                if (error) {
+                    console.error('Error guardando inspección:', error);
+                    showToast('Error al guardar: ' + error.message, 'error');
+                    return false;
+                }
+                
+                return true;
+            } catch (e) {
+                console.error('Error:', e);
+                showToast('Error de conexión', 'error');
+                return false;
+            }
+        }
+        
+        // Eliminar una inspección (solo admin)
+        async function deleteInspectionFromSupabase(id) {
+            if (!supabaseClient) {
+                showToast('Supabase no está configurado', 'error');
+                return false;
+            }
+            
+            try {
+                const { error } = await supabaseClient
+                    .from('inspections')
+                    .delete()
+                    .eq('id', id);
+                
+                if (error) {
+                    console.error('Error eliminando inspección:', error);
+                    showToast('Error al eliminar: ' + error.message, 'error');
+                    return false;
+                }
+                
+                return true;
+            } catch (e) {
+                console.error('Error:', e);
+                showToast('Error de conexión', 'error');
+                return false;
+            }
+        }
+        
+        // Suscribirse a cambios en tiempo real
+        function subscribeToInspections() {
+            if (!supabaseClient) return;
+            
+            supabaseClient
+                .channel('inspections_changes')
+                .on('postgres_changes', 
+                    { event: '*', schema: 'public', table: 'inspections' },
+                    (payload) => {
+                        console.log('Cambio detectado:', payload);
+                        // Recargar las inspecciones cuando hay cambios
+                        loadAllInspections().then(() => {
+                            // Refrescar la vista actual si es necesario
+                            const currentPage = document.querySelector('.sidebar-item.active');
+                            if (currentPage) {
+                                const pageId = currentPage.getAttribute('onclick')?.match(/navigateTo\('(.+?)'\)/)?.[1];
+                                if (pageId && ['dashboard', 'inspections', 'myInspections', 'calendar'].includes(pageId)) {
+                                    navigateTo(pageId);
+                                }
+                            }
+                        });
+                    }
+                )
+                .subscribe();
+        }
+
+        // =========================
+        // IMAGES - SUPABASE STORAGE
+        // =========================
+        
+        // Subir imagen a Supabase Storage
+        async function uploadImageToStorage(file, inspectionId, itemIndex) {
+            if (!supabaseClient || !file) return null;
+            
+            try {
+                // Generar nombre único para la imagen
+                const fileExt = file.name.split('.').pop() || 'jpg';
+                const fileName = `inspection_${inspectionId}_item_${itemIndex}_${Date.now()}.${fileExt}`;
+                const filePath = `${store.currentUserId}/${fileName}`;
+                
+                showToast('Subiendo imagen...', 'success');
+                
+                // Subir archivo a Supabase Storage
+                const { data, error } = await supabaseClient
+                    .storage
+                    .from('inspection-images')
+                    .upload(filePath, file, {
+                        cacheControl: '3600',
+                        upsert: false
+                    });
+                
+                if (error) {
+                    console.error('Error subiendo imagen:', error);
+                    showToast('Error al subir imagen: ' + error.message, 'error');
+                    return null;
+                }
+                
+                // Obtener URL pública de la imagen
+                const { data: { publicUrl } } = supabaseClient
+                    .storage
+                    .from('inspection-images')
+                    .getPublicUrl(filePath);
+                
+                return publicUrl;
+            } catch (e) {
+                console.error('Error:', e);
+                showToast('Error al subir imagen', 'error');
+                return null;
+            }
+        }
+        
+        // Eliminar imagen de Supabase Storage
+        async function deleteImageFromStorage(imageUrl) {
+            if (!supabaseClient || !imageUrl) return;
+            
+            try {
+                // Extraer el path de la URL
+                const url = new URL(imageUrl);
+                const pathMatch = url.pathname.match(/\/inspection-images\/(.*)/);
+                if (!pathMatch) return;
+                
+                const filePath = pathMatch[1];
+                
+                await supabaseClient
+                    .storage
+                    .from('inspection-images')
+                    .remove([filePath]);
+            } catch (e) {
+                console.warn('Error eliminando imagen:', e);
+            }
+        }
+        
+        // =========================
+        // CHECKLISTS - SUPABASE SYNC
+        // =========================
+        
+        async function loadChecklistsFromSupabase() {
+            if (!supabaseClient) return;
+            
+            try {
+                const { data, error } = await supabaseClient
+                    .from('checklists')
+                    .select('*');
+                
+                if (error) {
+                    console.warn('Error cargando checklists:', error);
+                    return;
+                }
+                
+                if (data && data.length > 0) {
+                    // Reconstruir el objeto de checklists
+                    const loadedChecklists = {};
+                    data.forEach(row => {
+                        loadedChecklists[row.equipment] = row.items || [];
+                    });
+                    
+                    // Fusionar con los defaults (mantener defaults si no hay datos en Supabase)
+                    store.checklistsByEquipment = { ...defaultChecklists, ...loadedChecklists };
+                }
+            } catch (e) {
+                console.warn('Error cargando checklists:', e);
+            }
+        }
+        
+        async function saveChecklistToSupabase(equipment, items) {
+            if (!supabaseClient) return false;
+            
+            try {
+                const { error } = await supabaseClient
+                    .from('checklists')
+                    .upsert({ 
+                        equipment: equipment, 
+                        items: items,
+                        updated_at: new Date().toISOString()
+                    }, { onConflict: 'equipment' });
+                
+                if (error) {
+                    console.error('Error guardando checklist:', error);
+                    return false;
+                }
+                
+                return true;
+            } catch (e) {
+                console.error('Error:', e);
+                return false;
+            }
+        }
+
+        // =========================
+        // UI Functions
+        // =========================
+        
+        let isLoading = false;
+        function showLoading(show) {
+            isLoading = show;
+            // Aquí podrías agregar un spinner global si lo deseas
         }
 
         // Initialize
@@ -569,7 +785,7 @@
             const { role, instructor, email, password } = getLoginInputs();
 
             if (!supabaseClient) {
-                showToast('Falta configurar Supabase (URL y ANON KEY) en el código', 'error');
+                showToast('Falta configurar Supabase', 'error');
                 return;
             }
 
@@ -584,9 +800,8 @@
                 return;
             }
 
-            // Si Supabase pide confirmar email, igual dejamos el mensaje claro.
             if (!data.session) {
-                showToast('Cuenta creada. Revisa tu email para confirmar y luego ingresa.', 'success');
+                showToast('Cuenta creada. Revisa tu email para confirmar.', 'success');
                 return;
             }
 
@@ -612,17 +827,8 @@
                 return;
             }
 
-            // Si Supabase no está configurado, la app queda en modo local (solo este navegador)
             if (!supabaseClient) {
-                store.currentRole = role;
-                store.currentUser = role === 'instructor' ? instructor : (role === 'facilitador' ? 'Facilitador' : 'Administrador');
-                document.getElementById('loginScreen').classList.add('hidden');
-                document.getElementById('mainApp').classList.remove('hidden');
-                document.getElementById('userNameDisplay').textContent = store.currentUser;
-                document.getElementById('userRoleDisplay').textContent = role.charAt(0).toUpperCase() + role.slice(1);
-                setupSidebar();
-                navigateTo('dashboard');
-                showToast('Modo local (sin Supabase)', 'success');
+                showToast('Supabase no está configurado correctamente', 'error');
                 return;
             }
 
@@ -633,11 +839,16 @@
             }
 
             const user = data.user;
-            currentAuthUserId = user.id;
+            store.currentUserId = user.id;
 
-            // Perfil (rol/nombre) en Supabase
+            // Guardar perfil en Supabase
             const displayName = role === 'instructor' ? instructor : email;
-            const profilePayload = { id: user.id, role, display_name: displayName, email: user.email };
+            const profilePayload = { 
+                id: user.id, 
+                role: role, 
+                display_name: displayName, 
+                email: user.email 
+            };
 
             const { error: profileError } = await supabaseClient
                 .from('profiles')
@@ -647,16 +858,15 @@
                 console.warn('Profile upsert error:', profileError);
             }
 
-            await loadStateFromSupabase();
+            // Cargar datos compartidos
+            await loadChecklistsFromSupabase();
+            await loadAllInspections();
+            
+            // Suscribirse a cambios en tiempo real
+            subscribeToInspections();
 
             store.currentRole = role;
             store.currentUser = displayName;
-
-            // Sincroniza también localStorage (por si se queda sin internet)
-        
-            queueSaveState();
-        
-            queueSaveState();
 
             document.getElementById('loginScreen').classList.add('hidden');
             document.getElementById('mainApp').classList.remove('hidden');
@@ -665,13 +875,10 @@
             document.getElementById('userRoleDisplay').textContent = role.charAt(0).toUpperCase() + role.slice(1);
 
             setupSidebar();
-            navigateTo('dashboard');
+            navigateTo(role === 'instructor' ? 'newInspection' : 'dashboard');
 
             showToast('Sesión iniciada', 'success');
         }
-
-
-        
 
         async function logout() {
             try {
@@ -680,12 +887,12 @@
                 console.warn('Supabase signOut error:', e);
             }
 
-            currentAuthUserId = null;
-
             store.currentUser = null;
             store.currentRole = null;
+            store.currentUserId = null;
             store.currentEquipmentChecklist = null;
             store.calendarFilter = '';
+            store.inspections = [];
 
             document.getElementById('mainApp').classList.add('hidden');
             document.getElementById('loginScreen').classList.remove('hidden');
@@ -865,7 +1072,7 @@
             }
             
             const inspection = {
-                id: Date.now(),
+                id: Date.now().toString(),
                 instructor: store.currentUser,
                 equipment: equipment,
                 date: new Date().toISOString(),
@@ -978,10 +1185,15 @@
                                     placeholder="Comentario opcional..." 
                                     class="w-full px-3 py-2 rounded-lg border border-gray-300 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent">
                                 
-                                <div class="flex items-center gap-2">
+                                <div class="flex items-center gap-2 flex-wrap">
                                     <label class="flex items-center gap-2 px-3 py-2 bg-blue-50 text-blue-600 rounded-lg cursor-pointer hover:bg-blue-100 transition-colors text-sm font-medium">
                                         <i class="fas fa-camera"></i>
-                                        <span>${item.image ? 'Cambiar foto' : 'Adjuntar evidencia'}</span>
+                                        <span>Tomar foto</span>
+                                        <input type="file" accept="image/*" capture="environment" class="hidden" onchange="handleImageUpload(${index}, this)">
+                                    </label>
+                                    <label class="flex items-center gap-2 px-3 py-2 bg-gray-100 text-gray-600 rounded-lg cursor-pointer hover:bg-gray-200 transition-colors text-sm font-medium">
+                                        <i class="fas fa-image"></i>
+                                        <span>Galería</span>
                                         <input type="file" accept="image/*" class="hidden" onchange="handleImageUpload(${index}, this)">
                                     </label>
                                     ${hasImage}
@@ -1003,16 +1215,45 @@
             store.draftInspection.items[index].comment = comment;
         }
 
-        function handleImageUpload(index, input) {
+        async function handleImageUpload(index, input) {
             const file = input.files[0];
-            if (file) {
+            if (!file) return;
+            
+            // Verificar tamaño (máximo 5MB)
+            if (file.size > 5 * 1024 * 1024) {
+                showToast('La imagen es muy grande. Máximo 5MB.', 'error');
+                return;
+            }
+            
+            // Si no hay Supabase configurado, usar base64 temporalmente
+            if (!supabaseClient) {
                 const reader = new FileReader();
                 reader.onload = (e) => {
                     store.draftInspection.items[index].image = e.target.result;
                     renderInspectionForm(document.getElementById('contentArea'), store.draftInspection);
-                    showToast('Imagen adjuntada', 'success');
+                    showToast('Imagen adjuntada (modo local)', 'success');
                 };
                 reader.readAsDataURL(file);
+                return;
+            }
+            
+            // Subir a Supabase Storage
+            const imageUrl = await uploadImageToStorage(
+                file, 
+                store.draftInspection.id, 
+                index
+            );
+            
+            if (imageUrl) {
+                // Eliminar imagen anterior si existe (para no acumular archivos)
+                const oldImage = store.draftInspection.items[index].image;
+                if (oldImage && oldImage.includes('supabase.co')) {
+                    await deleteImageFromStorage(oldImage);
+                }
+                
+                store.draftInspection.items[index].image = imageUrl;
+                renderInspectionForm(document.getElementById('contentArea'), store.draftInspection);
+                showToast('Imagen subida correctamente', 'success');
             }
         }
 
@@ -1025,19 +1266,26 @@
             document.getElementById('imageModal').classList.add('hidden');
         }
 
-        function saveDraft() {
+        async function saveDraft() {
             store.draftInspection.generalComments = document.getElementById('generalComments').value;
             store.draftInspection.lastSaved = new Date().toISOString();
             
-            store.inspections = store.inspections.filter(i => i.id !== store.draftInspection.id);
-            store.inspections.push({...store.draftInspection});
+            // Guardar en Supabase (tabla compartida)
+            const success = await saveInspectionToSupabase(store.draftInspection);
             
-            
-            queueSaveState();
-            showToast('Borrador guardado correctamente', 'success');
+            if (success) {
+                // Actualizar el store local
+                const existingIndex = store.inspections.findIndex(i => i.id === store.draftInspection.id);
+                if (existingIndex >= 0) {
+                    store.inspections[existingIndex] = { ...store.draftInspection };
+                } else {
+                    store.inspections.push({ ...store.draftInspection });
+                }
+                showToast('Borrador guardado correctamente', 'success');
+            }
         }
 
-        function finalizeInspection() {
+        async function finalizeInspection() {
             const inspection = store.draftInspection;
             const unanswered = inspection.items.filter(i => i.value === null);
             
@@ -1062,15 +1310,22 @@
             const passed = applicable.filter(i => i.value === 1);
             inspection.score = applicable.length > 0 ? (passed.length / applicable.length) * 100 : 0;
             
-            store.inspections = store.inspections.filter(i => i.id !== inspection.id);
-            store.inspections.push(inspection);
+            // Guardar en Supabase
+            const success = await saveInspectionToSupabase(inspection);
             
-            queueSaveState();
-            
-            store.draftInspection = null;
-            
-            showToast('¡Inspección finalizada exitosamente!', 'success');
-            setTimeout(() => navigateTo('myInspections'), 1000);
+            if (success) {
+                // Actualizar el store local
+                const existingIndex = store.inspections.findIndex(i => i.id === inspection.id);
+                if (existingIndex >= 0) {
+                    store.inspections[existingIndex] = { ...inspection };
+                } else {
+                    store.inspections.push({ ...inspection });
+                }
+                
+                store.draftInspection = null;
+                showToast('¡Inspección finalizada exitosamente!', 'success');
+                setTimeout(() => navigateTo('myInspections'), 1000);
+            }
         }
 
         function renderMyInspections(container) {
@@ -1097,7 +1352,7 @@
             container.innerHTML = `
                 <div class="grid gap-4 md:grid-cols-2 lg:grid-cols-3 slide-in">
                     ${myInspections.map(insp => `
-                        <div class="glass-panel rounded-xl p-6 shadow-lg card-hover cursor-pointer" onclick="viewInspectionDetail(${insp.id})">
+                        <div class="glass-panel rounded-xl p-6 shadow-lg card-hover cursor-pointer" onclick="viewInspectionDetail('${insp.id}')">
                             <div class="flex items-start justify-between mb-4">
                                 <div>
                                     <h3 class="font-bold text-lg text-gray-800">${insp.equipment}</h3>
@@ -1291,23 +1546,6 @@
                         </div>
                     </div>
                     
-                    <!-- Charts -->
-                    <div class="grid lg:grid-cols-2 gap-6">
-                        <div class="glass-panel rounded-xl p-6 shadow-lg">
-                            <h3 class="font-bold text-lg mb-4">Cumplimiento por Equipo</h3>
-                            <div class="chart-container">
-                                <canvas id="equipmentChart"></canvas>
-                            </div>
-                        </div>
-                        
-                        <div class="glass-panel rounded-xl p-6 shadow-lg">
-                            <h3 class="font-bold text-lg mb-4">Tendencia Mensual</h3>
-                            <div class="chart-container">
-                                <canvas id="trendChart"></canvas>
-                            </div>
-                        </div>
-                    </div>
-                    
                     <!-- Recent Inspections -->
                     <div class="glass-panel rounded-xl p-6 shadow-lg">
                         <div class="flex items-center justify-between mb-4">
@@ -1330,7 +1568,7 @@
                                 </thead>
                                 <tbody class="divide-y divide-gray-200">
                                     ${completedInspections.slice(0, 5).map(i => `
-                                        <tr class="hover:bg-gray-50 transition-colors cursor-pointer" onclick="viewInspectionDetailFacilitador(${i.id})">
+                                        <tr class="hover:bg-gray-50 transition-colors cursor-pointer" onclick="viewInspectionDetailFacilitador('${i.id}')">
                                             <td class="px-4 py-3 text-sm">${new Date(i.date).toLocaleDateString('es-ES')}</td>
                                             <td class="px-4 py-3 font-medium">${i.equipment}</td>
                                             <td class="px-4 py-3 text-sm">${i.instructor}</td>
@@ -1349,98 +1587,8 @@
                     </div>
                 </div>
             `;
-            
-            setTimeout(() => {
-                initCharts(byEquipment, completedInspections);
-            }, 100);
         }
 
-        function initCharts(byEquipment, inspections) {
-            const eqCtx = document.getElementById('equipmentChart');
-            if (eqCtx) {
-                new Chart(eqCtx, {
-                    type: 'bar',
-                    data: {
-                        labels: Object.keys(byEquipment),
-                        datasets: [{
-                            label: '% Cumplimiento',
-                            data: Object.values(byEquipment),
-                            backgroundColor: Object.values(byEquipment).map(v => v >= 80 ? '#10b981' : v >= 60 ? '#f59e0b' : '#ef4444'),
-                            borderRadius: 6
-                        }]
-                    },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        plugins: {
-                            legend: { display: false }
-                        },
-                        scales: {
-                            y: {
-                                beginAtZero: true,
-                                max: 100,
-                                ticks: {
-                                    callback: function(value) {
-                                        return value + '%';
-                                    }
-                                }
-                            }
-                        }
-                    }
-                });
-            }
-            
-            const trendCtx = document.getElementById('trendChart');
-            if (trendCtx) {
-                const months = {};
-                inspections.forEach(i => {
-                    const d = new Date(i.date);
-                    const key = `${d.getMonth() + 1}/${d.getFullYear()}`;
-                    if (!months[key]) months[key] = { sum: 0, count: 0 };
-                    months[key].sum += i.score;
-                    months[key].count++;
-                });
-                
-                const sortedMonths = Object.keys(months).sort();
-                
-                new Chart(trendCtx, {
-                    type: 'line',
-                    data: {
-                        labels: sortedMonths,
-                        datasets: [{
-                            label: 'Promedio Mensual',
-                            data: sortedMonths.map(m => months[m].sum / months[m].count),
-                            borderColor: '#3b82f6',
-                            backgroundColor: 'rgba(59, 130, 246, 0.1)',
-                            fill: true,
-                            tension: 0.4,
-                            pointRadius: 4,
-                            pointBackgroundColor: '#3b82f6'
-                        }]
-                    },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        plugins: {
-                            legend: { display: false }
-                        },
-                        scales: {
-                            y: {
-                                beginAtZero: true,
-                                max: 100,
-                                ticks: {
-                                    callback: function(value) {
-                                        return value + '%';
-                                    }
-                                }
-                            }
-                        }
-                    }
-                });
-            }
-        }
-
-        // CALENDARIO CORREGIDO - Ahora respeta el filtro por equipo
         function renderCalendar(container) {
             const now = new Date();
             const currentMonth = now.getMonth();
@@ -1449,16 +1597,13 @@
             const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
             const firstDay = new Date(currentYear, currentMonth, 1).getDay();
             
-            // Usar el filtro almacenado o vacío (todos)
             const selectedEquipment = store.calendarFilter || '';
             
-            // Filtrar inspecciones por equipo si hay selección
             let filteredInspections = store.inspections.filter(i => i.status === 'completed');
             if (selectedEquipment) {
                 filteredInspections = filteredInspections.filter(i => i.equipment === selectedEquipment);
             }
             
-            // Agrupar por día solo las inspecciones filtradas
             const inspectionsByDay = {};
             filteredInspections.forEach(i => {
                 const d = new Date(i.date);
@@ -1543,34 +1688,29 @@
             container.innerHTML = calendarHTML;
         }
 
-        // NUEVA FUNCIÓN: Aplicar filtro al calendario
         function applyCalendarFilter(equipment) {
             store.calendarFilter = equipment;
             renderCalendar(document.getElementById('contentArea'));
             showToast(equipment ? `Filtrando por: ${equipment}` : 'Mostrando todos los equipos', 'success');
         }
 
-        // NUEVA FUNCIÓN: Limpiar filtro del calendario
         function clearCalendarFilter() {
             store.calendarFilter = '';
             renderCalendar(document.getElementById('contentArea'));
             showToast('Filtro limpiado', 'success');
         }
 
-        // CORREGIDO: Ahora respeta el filtro de equipo al mostrar detalles del día
         function showDayInspections(day, equipmentFilter) {
             const details = document.getElementById('dayDetails');
             const month = new Date().getMonth();
             const year = new Date().getFullYear();
             const dateStr = new Date(year, month, day).toLocaleDateString('es-ES', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
             
-            // Filtrar inspecciones del día respetando el filtro de equipo
             let inspections = store.inspections.filter(i => {
                 const d = new Date(i.date);
                 return d.getDate() === day && d.getMonth() === month && d.getFullYear() === year && i.status === 'completed';
             });
             
-            // Aplicar filtro de equipo si existe
             if (equipmentFilter) {
                 inspections = inspections.filter(i => i.equipment === equipmentFilter);
             }
@@ -1594,7 +1734,7 @@
                 ` : `
                     <div class="grid gap-4 md:grid-cols-2">
                         ${inspections.map(i => `
-                            <div class="border rounded-lg p-4 hover:shadow-md transition-shadow cursor-pointer" onclick="viewInspectionDetailFacilitador(${i.id})">
+                            <div class="border rounded-lg p-4 hover:shadow-md transition-shadow cursor-pointer" onclick="viewInspectionDetailFacilitador('${i.id}')">
                                 <div class="flex items-center justify-between mb-2">
                                     <span class="font-semibold">${i.equipment}</span>
                                     <span class="text-lg font-bold ${i.score >= 80 ? 'text-green-600' : i.score >= 60 ? 'text-yellow-600' : 'text-red-600'}">${i.score.toFixed(1)}%</span>
@@ -1642,7 +1782,7 @@
                                 <tbody class="divide-y divide-gray-200">
                                     ${inspections.map(i => `
                                         <tr class="hover:bg-gray-50 transition-colors inspection-row" data-equipment="${i.equipment}" data-search="${i.equipment.toLowerCase()} ${i.instructor.toLowerCase()}">
-                                            <td class="px-4 py-3 text-sm font-mono">#${i.id.toString().slice(-4)}</td>
+                                            <td class="px-4 py-3 text-sm font-mono">#${String(i.id).slice(-4)}</td>
                                             <td class="px-4 py-3 text-sm">${new Date(i.date).toLocaleString('es-ES')}</td>
                                             <td class="px-4 py-3 font-medium">${i.equipment}</td>
                                             <td class="px-4 py-3 text-sm">${i.instructor}</td>
@@ -1651,11 +1791,11 @@
                                                 <span class="font-bold ${i.score >= 80 ? 'text-green-600' : i.score >= 60 ? 'text-yellow-600' : 'text-red-600'}">${i.score.toFixed(1)}%</span>
                                             </td>
                                             <td class="px-4 py-3">
-                                                <button onclick="viewInspectionDetailFacilitador(${i.id})" class="text-blue-600 hover:text-blue-800 mr-2">
+                                                <button onclick="viewInspectionDetailFacilitador('${i.id}')" class="text-blue-600 hover:text-blue-800 mr-2">
                                                     <i class="fas fa-eye"></i>
                                                 </button>
                                                 ${store.currentRole === 'admin' ? `
-                                                    <button onclick="deleteInspection(${i.id})" class="text-red-600 hover:text-red-800">
+                                                    <button onclick="deleteInspection('${i.id}')" class="text-red-600 hover:text-red-800">
                                                         <i class="fas fa-trash"></i>
                                                     </button>
                                                 ` : ''}
@@ -1744,13 +1884,14 @@
             });
         }
 
-        function deleteInspection(id) {
+        async function deleteInspection(id) {
             if (confirm('¿Estás seguro de eliminar esta inspección?')) {
-                store.inspections = store.inspections.filter(i => i.id !== id);
-                
-            queueSaveState();
-                showToast('Inspección eliminada', 'success');
-                navigateTo('inspections');
+                const success = await deleteInspectionFromSupabase(id);
+                if (success) {
+                    store.inspections = store.inspections.filter(i => i.id !== id);
+                    showToast('Inspección eliminada', 'success');
+                    navigateTo('inspections');
+                }
             }
         }
 
@@ -1786,14 +1927,6 @@
                                     <i class="fas fa-file-excel text-2xl"></i>
                                     <div class="text-left">
                                         <div class="font-semibold">Exportar CSV</div>
-                                        <div class="text-sm opacity-90">.xlsx completo con imágenes</div>
-                                    </div>
-                                </button>
-                                
-                                <button onclick="exportToCSV()" class="w-full flex items-center justify-center gap-3 px-6 py-4 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-all btn-press shadow-lg">
-                                    <i class="fas fa-file-csv text-2xl"></i>
-                                    <div class="text-left">
-                                        <div class="font-semibold">Exportar a CSV</div>
                                         <div class="text-sm opacity-90">Datos tabulares</div>
                                     </div>
                                 </button>
@@ -1891,11 +2024,7 @@
             showToast('Archivo CSV descargado', 'success');
         }
 
-        // Compatibilidad con el botón antiguo
-        function exportToExcel() {
-            exportToCSV();
-        }
-function printReport() {
+        function printReport() {
             window.print();
         }
 
@@ -2105,7 +2234,7 @@ function printReport() {
             renderChecklistAdmin(document.getElementById('contentArea'));
         }
 
-        function addChecklistItem(equipment) {
+        async function addChecklistItem(equipment) {
             const text = prompt('Texto del ítem de inspección:');
             if (!text || !text.trim()) return;
             
@@ -2123,13 +2252,14 @@ function printReport() {
             
             store.checklistsByEquipment[equipment].push(newItem);
             
-            queueSaveState();
+            // Guardar en Supabase
+            await saveChecklistToSupabase(equipment, store.checklistsByEquipment[equipment]);
             
             showToast('Ítem agregado correctamente', 'success');
             renderChecklistAdmin(document.getElementById('contentArea'));
         }
 
-        function editChecklistItem(equipment, idx) {
+        async function editChecklistItem(equipment, idx) {
             const item = store.checklistsByEquipment[equipment][idx];
             const text = prompt('Texto del ítem:', item.text);
             if (!text || !text.trim()) return;
@@ -2142,13 +2272,14 @@ function printReport() {
                 category: (category || 'General').trim()
             };
             
+            // Guardar en Supabase
+            await saveChecklistToSupabase(equipment, store.checklistsByEquipment[equipment]);
             
-            queueSaveState();
             showToast('Ítem actualizado', 'success');
             renderChecklistAdmin(document.getElementById('contentArea'));
         }
 
-        function moveChecklistItem(equipment, idx, direction) {
+        async function moveChecklistItem(equipment, idx, direction) {
             const items = store.checklistsByEquipment[equipment];
             const newIdx = idx + direction;
             
@@ -2156,19 +2287,21 @@ function printReport() {
             
             [items[idx], items[newIdx]] = [items[newIdx], items[idx]];
             
+            // Guardar en Supabase
+            await saveChecklistToSupabase(equipment, items);
             
-            queueSaveState();
             renderChecklistAdmin(document.getElementById('contentArea'));
         }
 
-        function deleteChecklistItem(equipment, idx) {
+        async function deleteChecklistItem(equipment, idx) {
             if (!confirm('¿Estás seguro de eliminar este ítem del checklist?\n\nEsta acción no afectará las inspecciones ya realizadas.')) {
                 return;
             }
             
             store.checklistsByEquipment[equipment].splice(idx, 1);
             
-            queueSaveState();
+            // Guardar en Supabase
+            await saveChecklistToSupabase(equipment, store.checklistsByEquipment[equipment]);
             
             showToast('Ítem eliminado', 'success');
             renderChecklistAdmin(document.getElementById('contentArea'));
